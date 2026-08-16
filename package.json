@@ -1,0 +1,48 @@
+{
+  "name": "workast-mcp",
+  "version": "1.0.0",
+  "description": "Workast agent MCP server — Model Context Protocol tools for Workast, authenticated with an API key",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/workast/mcp.git"
+  },
+  "keywords": [
+    "workast",
+    "mcp",
+    "model context protocol",
+    "agent",
+    "project management",
+    "api"
+  ],
+  "author": "Workast <support@workast.com> (http://workast.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/workast/mcp/issues"
+  },
+  "homepage": "https://github.com/workast/mcp#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@workast/sdk": "^3",
+    "mcp-handler": "^2.0.0",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
