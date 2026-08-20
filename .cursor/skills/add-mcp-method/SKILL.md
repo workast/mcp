@@ -1,79 +1,86 @@
 ---
 name: add-mcp-method
 description: >-
-  Adds a Workast MCP tool that wraps one @workast/sdk method: red mock-fetch
+  Adds a Workast MCP tool that wraps one @workast/sdk method: red mockWorkast
   test, tool file under src/tools, explicit register in create-handler. Use when
-  adding an MCP tool, wrapping an SDK verb (tasks_create, tasks_retrieve, …),
+  adding an MCP tool, wrapping an SDK verb (create_tasks, retrieve_task, …),
   or extending the agent MCP surface; not for OAuth, well-known routes, or
   auto-registries.
 ---
 
 # Add an MCP tool
 
-Copy `src/tools/tasks-create.ts` and `test/tools/tasks-create.test.ts`. One SDK method → one tool file + one test file. Explicit import in `src/create-handler.ts` — no auto-registry. Auth stays in `src/auth/verify-api-key.ts`; tools only read `ctx.http?.authInfo?.token`. Types come from `@workast/sdk`, not hand-copied models. Do not add OAuth, retries, or extra abstraction layers.
+Copy a nearby tool (for example `src/tools/create-tasks.ts` and `test/tools/create-tasks.test.ts`). One SDK method → one tool file + one test file. Explicit import in `src/create-handler.ts` — no auto-registry. Auth stays in `src/auth/verify-api-key.ts`; tools only read `ctx.http?.authInfo?.token`. Types and examples come from `@workast/sdk` / `@workast/sdk/mock`. Do not add OAuth, retries, or extra abstraction layers.
 
-Canonical example: `tasks_create` → `workast.tasks.create(listId, body)` via `createWorkast` in `src/workast.ts`.
+Canonical example: `create_tasks` → `workast.tasks.create(spaceId, body)` via `createWorkast` in `src/workast.ts`. Tool args use UI names (`spaceId`, `reportId`); SDK paths stay `/list`, `/search`.
 
 ## Layout
 
 | Piece | Path |
 | --- | --- |
-| Tool | `src/tools/<ns>-<verb>.ts` |
-| Test | `test/tools/<ns>-<verb>.test.ts` |
-| Register | `src/create-handler.ts` (call the register fn next to `registerTasksCreate`) |
+| Tool | `src/tools/<tool-name>.ts` |
+| Test | `test/tools/<tool-name>.test.ts` |
+| Register | `src/create-handler.ts` (call the register fn next to the other `register*` calls) |
 | Route | `app/mcp/route.ts` — already mounts `createHandler()`; do not register tools here |
-| Client | `src/workast.ts` — `createWorkast(apiKey, { fetch?, baseUrl? })` |
+| Client | `src/workast.ts` — `createWorkast(apiKey)` |
 | Auth | `src/auth/verify-api-key.ts` — do not change for a new tool |
-| Helpers | `test/helpers.ts` — `makeCreateWorkast`, `mockFetch`, `mcpRequest`, `sseData`, … |
+| Run | `src/run-tool.ts` — `runWorkast(token, fn)` (missing token + `ApiError`) |
+| Helpers | `test/helpers.ts` — `setupWorkastMock`, `callTool`, `expectToolData`, `mcpRequest` |
 
-Tool name is `namespace_verb` (MCP): `tasks_create`, `tasks_retrieve`. File slug uses hyphens: `tasks-create.ts`.
+Tool name is the MCP name: `list_spaces`, `create_tasks`, `retrieve_report`. File slug uses hyphens: `list-spaces.ts`. Register fn is `register` + PascalCase tool: `registerListSpaces`.
 
 ## 1. Resolve the SDK method
 
-In `@workast/sdk` (or the SDK skill / swagger Public operation), record: resource method, path ids, body/query type, success type, HTTP method + path. If the SDK method does not exist yet, add it in the SDK repo first — this MCP skill only wraps shipped SDK methods.
+In `@workast/sdk` (or the SDK skill / swagger Public operation), record: resource method, path ids, body/query type, success type. If the SDK method does not exist yet, add it in the SDK repo first — this MCP skill only wraps shipped SDK methods.
 
-## 2. Red mock-fetch test first
+Map UI ids to SDK ids in the handler only: `spaceId` → list id, `reportId` → search id. Do not expose `listId` in the tool schema.
 
-Add `test/tools/<ns>-<verb>.test.ts`. Reuse helpers from `test/helpers.ts`:
+## 2. Red mockWorkast test first
 
-- `makeCreateWorkast()` — injects mock `fetch` into `createWorkast`
-- `createHandler({ createWorkast })` — wire the handler under test
-- `mcpRequest('tasks_create', { … })` — JSON-RPC `tools/call` with Bearer key
-- `sseData` / `getRequest` — assert tool result and outbound HTTP
+Add `test/tools/<tool-name>.test.ts`. Copy `test/tools/create-tasks.test.ts`. Reuse helpers from `test/helpers.ts`:
 
-Mirror `test/tools/tasks-create.test.ts`:
+- `setupWorkastMock()` — patches every `Workast` instance, including the real `createWorkast` client
+- `callTool(createHandler(), name, args)` — JSON-RPC `tools/call` with Bearer key
+- `expectToolData` / `expectUnauthorizedTool` — assert tool result JSON
 
-1. Happy path: assert method, full URL (`${DEFAULT_BASE_URL}` + path), `Authorization: Bearer ${API_KEY}`, JSON body, tool content = `JSON.stringify(fixture)`.
-2. SDK error (e.g. 401): assert HTTP 200 MCP response, `result.isError === true`, message includes status — not an unhandled throw.
+Tests call `createHandler()`. `mockWorkast()` intercepts SDK methods on the live client.
 
-Do not hit live Workast. Keep fixtures small and local (see `createdTask` in helpers, or add a fixture next to the new test).
+1. Happy path: `.on(expectedSdkArgs).resolves(examples.*)` then `callTool` then `expectToolData` plus `mock.calls()` for SDK method + args. Use `examples.list.id`, `examples.task.id`, `examples.task.text`, `examples.user.id`, `examples.customField.id`, `examples.task.shortId` — never `'list-1'` / `'task-1'`. Success JSON is the SDK example as returned (pass-through).
+2. SDK 401: `.rejects(errors.unauthorized)` then HTTP 200 MCP response and `expectUnauthorizedTool`. For multi-arg methods, match the same `.on(...)` args as the happy path.
+3. Void SDK methods (`.resolves()` with no value): tool result `{ ok: true }`.
+4. Multi-call tools queue one interceptor per SDK call and assert `mock.calls()` length and order.
+
+`.on()` is a prefix match. Nested objects match regardless of key order. Do not assert HTTP method, URL, or `Authorization`. Do not invent slim card objects or local fixture files.
+
+When the tool has optional filters, call the SDK with **no argument** when none are set (`lists.list()`, not `lists.list({})`). Pass only the keys that were set.
+
+Import `examples` / `errors` from `@workast/sdk/mock`. Do not hit live Workast.
 
 ## 3. Implement the tool
 
-Add `src/tools/<ns>-<verb>.ts`. Pattern from `tasks-create`:
+Add `src/tools/<tool-name>.ts`. Pattern from `create-tasks`:
 
-- Export `registerTasksCreate(server, deps?)` (name = `register` + PascalCase tool).
-- Optional deps: `{ createWorkast? }` so tests inject mock fetch; default to `../workast`.
-- `server.registerTool('tasks_create', { description, inputSchema }, handler)`.
-- Zod `inputSchema`: path ids first (`listId`, …), then swagger/SDK body fields as optional/required Zod fields — do not invent fields. Cast the body slice to the SDK type (`TaskCreate`, …) from `@workast/sdk`.
-- Handler: read `const token = ctx.http?.authInfo?.token`; missing → failed tool result. `makeClient(token)` → call the SDK method. Success → `{ content: [{ type: 'text', text: JSON.stringify(result) }] }`. Catch `ApiError` → failed tool result with `message (status)`; rethrow unknowns.
+- Export `registerCreateTasks(server)` (name = `register` + PascalCase tool).
+- Call `runWorkast` from `../run-tool`. Do not take a `createWorkast` dependency in the tool file.
+- `server.registerTool('create_tasks', { description, inputSchema }, handler)`.
+- Zod `inputSchema`: UI path ids first (`spaceId`, `taskId`, …), then swagger/SDK body fields as optional/required Zod fields — do not invent fields. Cast the body slice to the SDK type (`TaskCreate`, …) from `@workast/sdk`.
+- Handler: `runWorkast(ctx.http?.authInfo?.token, async (workast) => { … })`. Success → JSON text of the SDK return value (or `{ ok: true }` when the SDK is void). `ApiError` → failed tool result with `message (status)`; unknowns rethrow.
 
 ```ts
-import { ApiError, type TaskCreate } from '@workast/sdk';
+import type { TaskCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { createWorkast as defaultCreateWorkast } from '../workast';
+import { runWorkast } from '../run-tool';
 
-// registerTool('tasks_create', …) → workast.tasks.create(listId, body)
+// registerTool('create_tasks', …) → workast.tasks.create(spaceId, body)
 ```
 
 ## 4. Register explicitly
 
 In `src/create-handler.ts`:
 
-1. Import `registerTasksRetrieve` (or whatever) from `./tools/<ns>-<verb>`.
-2. Call it inside the `createMcpHandler` callback next to `registerTasksCreate(server, deps)`.
-3. Pass the same `deps` so tests can inject `createWorkast`.
+1. Import `registerRetrieveTask` (or whatever) from `./tools/<tool-name>`.
+2. Call it inside the `createMcpHandler` callback next to the other `register*` calls.
 
 `app/mcp/route.ts` stays a thin mount — do not add tool imports there.
 
@@ -89,7 +96,7 @@ From this MCP repo:
 
 ```bash
 nvm use
-npm test
+npm test -- test/tools/<tool-name>.test.ts
 npm run build
 ```
 
@@ -97,8 +104,8 @@ Do not start the next tool until green.
 
 ## Conventions
 
-- Naming: MCP `tasks_retrieve` → files `tasks-retrieve.ts` / `tasks-retrieve.test.ts` → `registerTasksRetrieve`.
-- Input = path ids + SDK body/query fields only; types from `@workast/sdk`.
-- Return JSON text content; map `ApiError` to `isError: true` tool results.
+- Naming: MCP `retrieve_task` → files `retrieve-task.ts` / `retrieve-task.test.ts` → `registerRetrieveTask`.
+- Input = UI ids (`spaceId`, not `listId`) + SDK body/query fields; types from `@workast/sdk`.
+- Return JSON text content (SDK payload pass-through); map `ApiError` to `isError: true` tool results.
 - Keep `ping` as the no-API health tool behind the same auth wrapper.
 - Agent host only — no OAuth, no `/.well-known/*`.

@@ -1,0 +1,27 @@
+import type { McpServer } from '@modelcontextprotocol/server';
+import { z } from 'zod';
+import { runWorkast } from '../run-tool';
+
+const inputSchema = z.object({
+  meetingId: z.string().describe('Meeting ID'),
+  includeTranscript: z.boolean().optional()
+    .describe('When true, also fetch the meeting recording and transcript'),
+});
+
+export function registerRetrieveMeeting(server: McpServer): void {
+  server.registerTool(
+    'retrieve_meeting',
+    {
+      description: 'Retrieve a meeting. Set includeTranscript to also return recording assets.',
+      inputSchema,
+    },
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
+      const meeting = await workast.meetings.retrieve(args.meetingId);
+      if (!args.includeTranscript) {
+        return meeting;
+      }
+      const recording = await workast.meetings.retrieveRecording(args.meetingId);
+      return { ...meeting, recording };
+    }),
+  );
+}

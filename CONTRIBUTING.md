@@ -15,4 +15,4 @@ npm run build
 
 ## Add a tool
 
-To wrap another `@workast/sdk` method as an MCP tool, follow [`.cursor/skills/add-mcp-method/SKILL.md`](.cursor/skills/add-mcp-method/SKILL.md). Copy the `tasks_create` slice (`src/tools/tasks-create.ts`, `test/tools/tasks-create.test.ts`, explicit register in `src/create-handler.ts`).
+To wrap another `@workast/sdk` method as an MCP tool, follow [`.cursor/skills/add-mcp-method/SKILL.md`](.cursor/skills/add-mcp-method/SKILL.md). Copy an existing slice (for example `src/tools/create-tasks.ts` and `test/tools/create-tasks.test.ts`) and register it explicitly in `src/create-handler.ts`.

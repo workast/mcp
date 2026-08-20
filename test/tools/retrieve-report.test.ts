@@ -1,0 +1,60 @@
+import { describe, expect, it } from 'vitest';
+import { examples, errors } from '@workast/sdk/mock';
+import { createHandler } from '../../src/create-handler';
+import {
+  callTool,
+  expectToolData,
+  expectUnauthorizedTool,
+  setupWorkastMock,
+} from '../helpers';
+
+const { search, searchDetail } = examples;
+
+describe('retrieve_report tool', () => {
+  const mock = setupWorkastMock();
+
+  it('calls searches.retrieve with default getTasks and returns the report', async () => {
+    mock.searches.retrieve.on(search.id, { getTasks: 25 }).resolves(searchDetail);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'retrieve_report', {
+      reportId: search.id,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, searchDetail);
+    expect(mock.calls()).toEqual([{
+      method: 'searches.retrieve',
+      args: [search.id, { getTasks: 25 }],
+    }]);
+  });
+
+  it('calls searches.retrieve with getTasks when set', async () => {
+    mock.searches.retrieve.on(search.id, { getTasks: 50 }).resolves(searchDetail);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'retrieve_report', {
+      reportId: search.id,
+      getTasks: 50,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, searchDetail);
+    expect(mock.calls()).toEqual([{
+      method: 'searches.retrieve',
+      args: [search.id, { getTasks: 50 }],
+    }]);
+  });
+
+  it('returns a failed tool result on SDK 401', async () => {
+    mock.searches.retrieve.on(search.id, { getTasks: 25 }).rejects(errors.unauthorized);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'retrieve_report', {
+      reportId: search.id,
+    });
+
+    expect(status).toBe(200);
+    expectUnauthorizedTool(message);
+  });
+});

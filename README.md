@@ -34,7 +34,27 @@ Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workas
 | Tool | Description |
 | --- | --- |
 | `ping` | Health check (requires auth) |
-| `tasks_create` | Create a task in a list (`listId`, `text`, plus optional TaskCreate fields) |
+| `list_spaces` | List spaces (`type`, `participants`) |
+| `create_space` | Create a space (`name`, optional `participants`, `privacy`) |
+| `add_space_participants` | Add users to a space (`spaceId`, `users`) |
+| `list_space_participants` | List space participants (`spaceId`) |
+| `create_sublist` | Create a sublist (`spaceId`, `name`) |
+| `list_coworkers` | List teammates |
+| `about_me` | Current user and team |
+| `search_tasks` | Search tasks with filters (`spaceId`, `statusIs`, …) |
+| `retrieve_task` | Get a task (`taskId` or `shortId`) |
+| `create_tasks` | Create tasks in a space (`spaceId`, `tasks[]`) |
+| `create_subtasks` | Create subtasks (`parentTaskId`, `subtasks[]`) |
+| `update_tasks` | Patch tasks (`taskIds[]` plus fields; no `status`) |
+| `complete_tasks` | Mark tasks done (`taskIds[]`) |
+| `create_comment` | Comment on a task (`taskId`, `comment`) |
+| `list_task_activity` | Task activity (`taskId`, optional `type`) |
+| `list_meetings` | List meetings (`startDateAfter`, `startDateBefore`, `participants`) |
+| `retrieve_meeting` | Get a meeting (`meetingId`, optional `includeTranscript`) |
+| `list_fields` | List custom fields (optional `spaceId`) |
+| `create_field` | Create a field and enable it on a space |
+| `list_reports` | List saved reports (optional `home`) |
+| `retrieve_report` | Get a report and its tasks (`reportId`, optional `getTasks`) |
 
 ## Local development
 
