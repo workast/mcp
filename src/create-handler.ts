@@ -23,7 +23,19 @@ import { registerRetrieveTask } from './tools/retrieve-task';
 import { registerSearchTasks } from './tools/search-tasks';
 import { registerUpdateTasks } from './tools/update-tasks';
 
-export function createHandler() {
+type CreateHandlerOptions = {
+  authMode?: 'agent' | 'user';
+  authUrl?: string;
+};
+
+export function createHandler(options: CreateHandlerOptions = {}) {
+  const authMode = options.authMode ?? process.env.MCP_AUTH_MODE ?? 'agent';
+  const authUrl = options.authUrl ?? process.env.WORKAST_AUTH_URL;
+
+  if (authMode === 'user' && !authUrl) {
+    throw new Error('WORKAST_AUTH_URL is required when MCP_AUTH_MODE=user');
+  }
+
   const handler = createMcpHandler((server) => {
     server.registerTool(
       'ping',
@@ -59,5 +71,17 @@ export function createHandler() {
     registerRetrieveReport(server);
   });
 
-  return withMcpAuth(handler, verifyApiKey, { required: true });
+  const authOptions =
+    authMode === 'user'
+      ? {
+          required: true as const,
+          resourceMetadataPath: '/.well-known/oauth-protected-resource',
+        }
+      : {
+          required: true as const,
+          // mcp-handler defaults resourceMetadataPath; empty values omit resource_metadata on 401.
+          resourceMetadataPath: '',
+          resourceUrl: '',
+        };
+  return withMcpAuth(handler, verifyApiKey, authOptions);
 }
