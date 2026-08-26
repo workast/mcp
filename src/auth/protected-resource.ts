@@ -21,7 +21,7 @@ export function getProtectedResourceHandlers(options: {
   return {
     GET: (req: Request) =>
       protectedResourceHandler({
-        authServerUrls: [authUrl],
+        authServerUrls: [new URL(authUrl).origin],
         resourceUrl: `${getPublicOrigin(req)}/mcp`,
       })(req),
     OPTIONS: corsHandler,

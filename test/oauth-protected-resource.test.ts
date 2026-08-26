@@ -35,6 +35,19 @@ describe('oauth protected resource metadata', () => {
       expect(response.status).toBe(200);
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
     });
+
+    it('strips a trailing slash from authorization_servers', async () => {
+      const { GET } = getProtectedResourceHandlers({
+        authMode: 'user',
+        authUrl: 'https://my.workast.com/',
+      });
+
+      const response = await GET(wellKnownRequest('GET'));
+      const body = await response.json();
+
+      expect(body.authorization_servers).toContain('https://my.workast.com');
+      expect(body.authorization_servers).not.toContain('https://my.workast.com/');
+    });
   });
 
   describe('agent mode', () => {
