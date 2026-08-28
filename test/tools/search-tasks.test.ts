@@ -10,17 +10,18 @@ import {
 
 const { customField, list, searchResults, subList, tag, task, user } = examples;
 
-function searchPayload(predicates: unknown[]) {
+function searchPayload(predicates: unknown[], paging: { limit?: number; skip?: number } = {}) {
   return {
     predicates,
     includeSubTasks: true,
     sort: [{ field: 'createdAt', direction: -1 }],
-    limit: 25,
+    limit: paging.limit ?? 25,
+    skip: paging.skip ?? 0,
     expand: ['listId', 'assignedTo'],
   };
 }
 
-describe('search_tasks tool', () => {
+describe('workast_search_tasks tool', () => {
   const mock = setupWorkastMock();
 
   async function expectSearch(
@@ -31,10 +32,18 @@ describe('search_tasks tool', () => {
     mock.tasks.list.on(body).resolves(searchResults);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'search_tasks', args);
+    const { status, message } = await callTool(POST, 'workast_search_tasks', args);
 
     expect(status).toBe(200);
-    expectToolData(message, searchResults);
+    const count = searchResults.tasks.length;
+    const has_more = 0 + count < searchResults.total;
+    expectToolData(message, {
+      ...searchResults,
+      count,
+      skip: 0,
+      has_more,
+      next_skip: has_more ? count : null,
+    });
     expect(mock.calls()).toEqual([{
       method: 'tasks.list',
       args: [body],
@@ -198,11 +207,117 @@ describe('search_tasks tool', () => {
     ])).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'search_tasks', {
+    const { status, message } = await callTool(POST, 'workast_search_tasks', {
       statusIs: 'pending',
     });
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);
+  });
+
+  it('forwards limit and skip on the search body', async () => {
+    const predicates = [
+      { type: 'string', attribute: 'text', comparison: 'contains', value: 'Ship' },
+    ];
+    const body = searchPayload(predicates, { limit: 10, skip: 20 });
+    mock.tasks.list.on(body).resolves(searchResults);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_search_tasks', {
+      q: 'Ship',
+      limit: 10,
+      skip: 20,
+    });
+
+    expect(status).toBe(200);
+    expect(message.error).toBeUndefined();
+    expect(mock.calls()).toEqual([{
+      method: 'tasks.list',
+      args: [body],
+    }]);
+  });
+
+  it('defaults to limit 25 and skip 0 when paging args are omitted', async () => {
+    await expectSearch({}, []);
+  });
+
+  it('includes pagination fields when more results remain', async () => {
+    const tasks = [task, { ...task, id: `${task.id}-2` }];
+    const body = searchPayload([], { limit: 10, skip: 20 });
+    mock.tasks.list.on(body).resolves({ tasks, total: 30 });
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_search_tasks', {
+      limit: 10,
+      skip: 20,
+    });
+
+    expect(status).toBe(200);
+    const text = message.result?.content?.[0]?.text;
+    expect(text).toBeTruthy();
+    const data = JSON.parse(text as string);
+    expect(data.count).toBe(2);
+    expect(data.skip).toBe(20);
+    expect(data.has_more).toBe(true);
+    expect(data.next_skip).toBe(22);
+  });
+
+  it('sets has_more false and next_skip null when the page is complete', async () => {
+    const tasks = [task, { ...task, id: `${task.id}-2` }];
+    const body = searchPayload([], { limit: 10, skip: 28 });
+    mock.tasks.list.on(body).resolves({ tasks, total: 30 });
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_search_tasks', {
+      limit: 10,
+      skip: 28,
+    });
+
+    expect(status).toBe(200);
+    const text = message.result?.content?.[0]?.text;
+    expect(text).toBeTruthy();
+    const data = JSON.parse(text as string);
+    expect(data.has_more).toBe(false);
+    expect(data.next_skip).toBeNull();
+  });
+
+  it('marks oversized search results as truncated', async () => {
+    const padded = { ...task, description: 'x'.repeat(200) };
+    const tasks = Array.from({ length: 200 }, (_, i) => ({
+      ...padded,
+      id: `${task.id}-${i}`,
+    }));
+    expect(JSON.stringify({ tasks, total: 200 }).length).toBeGreaterThan(25000);
+
+    const body = searchPayload([]);
+    mock.tasks.list.on(body).resolves({ tasks, total: 200 });
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_search_tasks', {});
+
+    expect(status).toBe(200);
+    const text = message.result?.content?.[0]?.text;
+    expect(text).toBeTruthy();
+    const data = JSON.parse(text as string);
+    expect(data.truncated).toBe(true);
+    expect(data.truncation_message).toEqual(expect.stringMatching(/truncated/i));
+    expect(data.truncation_message).toEqual(expect.stringMatching(/limit/i));
+    expect(data.tasks.length).toBeLessThan(tasks.length);
+    expect(data.count).toBe(data.tasks.length);
+    expect(data.has_more).toBe(true);
+  });
+
+  it('passes a small search result through without truncated', async () => {
+    const body = searchPayload([]);
+    mock.tasks.list.on(body).resolves(searchResults);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_search_tasks', {});
+
+    expect(status).toBe(200);
+    const text = message.result?.content?.[0]?.text;
+    expect(text).toBeTruthy();
+    const data = JSON.parse(text as string);
+    expect(data.truncated).toBeUndefined();
   });
 });

@@ -10,14 +10,14 @@ import {
 
 const { list, subList } = examples;
 
-describe('create_sublist tool', () => {
+describe('workast_create_sublist tool', () => {
   const mock = setupWorkastMock();
 
   it('calls lists.sublists.create with name', async () => {
     mock.lists.sublists.create.on(list.id, { name: subList.name }).resolves(subList);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_sublist', {
+    const { status, message } = await callTool(POST, 'workast_create_sublist', {
       spaceId: list.id,
       name: subList.name,
     });
@@ -34,7 +34,7 @@ describe('create_sublist tool', () => {
     mock.lists.sublists.create.on(list.id, { name: subList.name }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_sublist', {
+    const { status, message } = await callTool(POST, 'workast_create_sublist', {
       spaceId: list.id,
       name: subList.name,
     });

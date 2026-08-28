@@ -12,14 +12,14 @@ const { commentActivity, task } = examples;
 
 const commentBody = { type: 'comment', value: commentActivity.value };
 
-describe('create_comment tool', () => {
+describe('workast_create_comment tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.activities.create with a top-level comment', async () => {
     mock.tasks.activities.create.on(task.id, commentBody).resolves(commentActivity);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_comment', {
+    const { status, message } = await callTool(POST, 'workast_create_comment', {
       taskId: task.id,
       comment: commentActivity.value,
     });
@@ -37,7 +37,7 @@ describe('create_comment tool', () => {
     mock.tasks.activities.create.on(task.id, commentBody).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_comment', {
+    const { status, message } = await callTool(POST, 'workast_create_comment', {
       taskId: task.id,
       comment: commentActivity.value,
     });

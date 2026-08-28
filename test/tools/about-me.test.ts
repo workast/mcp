@@ -10,14 +10,14 @@ import {
 
 const { userResource } = examples;
 
-describe('about_me tool', () => {
+describe('workast_about_me tool', () => {
   const mock = setupWorkastMock();
 
   it('calls users.me and returns the user', async () => {
     mock.users.me.on().resolves(userResource);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'about_me', {});
+    const { status, message } = await callTool(POST, 'workast_about_me', {});
 
     expect(status).toBe(200);
     expectToolData(message, userResource);
@@ -28,7 +28,7 @@ describe('about_me tool', () => {
     mock.users.me.on().rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'about_me', {});
+    const { status, message } = await callTool(POST, 'workast_about_me', {});
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);

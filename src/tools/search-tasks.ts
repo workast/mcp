@@ -1,4 +1,4 @@
-import type { TaskSearch } from '@workast/sdk';
+import type { SearchResults, TaskSearch } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { runWorkast } from '../run-tool';
@@ -32,6 +32,10 @@ const inputSchema = z.object({
     value: z.string(),
   })).optional()
     .describe('Filter by custom field values'),
+  limit: z.number().int().min(1).max(100).default(25)
+    .describe('Maximum number of tasks to return (1–100)'),
+  skip: z.number().int().min(0).default(0)
+    .describe('Number of tasks to skip'),
 });
 
 type Predicate = TaskSearch['predicates'][number];
@@ -121,20 +125,39 @@ function compilePredicates(args: z.infer<typeof inputSchema>): Predicate[] {
 
 export function registerSearchTasks(server: McpServer): void {
   server.registerTool(
-    'search_tasks',
+    'workast_search_tasks',
     {
+      title: 'Search Tasks',
       description: 'Search tasks with filters. Multiple filters are combined with AND.',
       inputSchema,
+      annotations: {
+        title: 'Search Tasks',
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       const body = {
         predicates: compilePredicates(args),
         includeSubTasks: true,
         sort: [{ field: 'createdAt', direction: -1 }],
-        limit: 25,
+        limit: args.limit,
+        skip: args.skip,
         expand: ['listId', 'assignedTo'],
       } as TaskSearch;
-      return workast.tasks.list(body);
+      const result = await workast.tasks.list(body) as SearchResults & {
+        tasks: NonNullable<SearchResults['tasks']>;
+        total: number;
+      };
+      const count = result.tasks.length;
+      const has_more = args.skip + count < result.total;
+      return {
+        ...result,
+        count,
+        skip: args.skip,
+        has_more,
+        next_skip: has_more ? args.skip + count : null,
+      };
     }),
   );
 }

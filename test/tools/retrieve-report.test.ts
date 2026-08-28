@@ -10,14 +10,14 @@ import {
 
 const { search, searchDetail } = examples;
 
-describe('retrieve_report tool', () => {
+describe('workast_retrieve_report tool', () => {
   const mock = setupWorkastMock();
 
   it('calls searches.retrieve with default getTasks and returns the report', async () => {
     mock.searches.retrieve.on(search.id, { getTasks: 25 }).resolves(searchDetail);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_report', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_report', {
       reportId: search.id,
     });
 
@@ -33,7 +33,7 @@ describe('retrieve_report tool', () => {
     mock.searches.retrieve.on(search.id, { getTasks: 50 }).resolves(searchDetail);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_report', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_report', {
       reportId: search.id,
       getTasks: 50,
     });
@@ -50,7 +50,7 @@ describe('retrieve_report tool', () => {
     mock.searches.retrieve.on(search.id, { getTasks: 25 }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_report', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_report', {
       reportId: search.id,
     });
 

@@ -10,14 +10,14 @@ import {
 
 const { meeting, meetingDetail, meetingRecordingResource } = examples;
 
-describe('retrieve_meeting tool', () => {
+describe('workast_retrieve_meeting tool', () => {
   const mock = setupWorkastMock();
 
   it('calls meetings.retrieve once when transcript is omitted', async () => {
     mock.meetings.retrieve.on(meeting.id).resolves(meetingDetail);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_meeting', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_meeting', {
       meetingId: meeting.id,
     });
 
@@ -34,7 +34,7 @@ describe('retrieve_meeting tool', () => {
     mock.meetings.retrieveRecording.on(meeting.id).resolves(meetingRecordingResource);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_meeting', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_meeting', {
       meetingId: meeting.id,
       includeTranscript: true,
     });
@@ -51,7 +51,7 @@ describe('retrieve_meeting tool', () => {
     mock.meetings.retrieve.on(meeting.id).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_meeting', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_meeting', {
       meetingId: meeting.id,
     });
 

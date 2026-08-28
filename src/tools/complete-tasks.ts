@@ -8,10 +8,18 @@ const inputSchema = z.object({
 
 export function registerCompleteTasks(server: McpServer): void {
   server.registerTool(
-    'complete_tasks',
+    'workast_complete_tasks',
     {
+      title: 'Complete Tasks',
       description: 'Mark one or more tasks as done.',
       inputSchema,
+      annotations: {
+        title: 'Complete Tasks',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       for (const taskId of args.taskIds) {

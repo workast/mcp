@@ -17,14 +17,14 @@ const patch = {
   dueDateTimezone: 'UTC',
 };
 
-describe('update_tasks tool', () => {
+describe('workast_update_tasks tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.update with patch fields and no status', async () => {
     mock.tasks.update.on(task.id, patch).resolves();
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'update_tasks', {
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
       taskIds: [task.id],
       ...patch,
     });
@@ -43,7 +43,7 @@ describe('update_tasks tool', () => {
     mock.tasks.update.on(user.id, { text: task.text }).resolves();
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'update_tasks', {
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
       taskIds: [task.id, user.id],
       text: task.text,
     });
@@ -61,7 +61,7 @@ describe('update_tasks tool', () => {
     mock.tasks.update.on(task.id, { text: task.text }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'update_tasks', {
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
       taskIds: [task.id],
       text: task.text,
     });

@@ -15,39 +15,44 @@ const timeRange = {
   timeMax: '2026-04-30T23:59:59.000Z',
 };
 
-describe('list_meetings tool', () => {
+describe('workast_list_meetings tool', () => {
   const mock = setupWorkastMock();
 
   it('calls meetings.list with timeMin and timeMax', async () => {
-    mock.meetings.list.on(timeRange).resolves(meetings);
+    const query = { ...timeRange, maxResults: 50 };
+    mock.meetings.list.on(query).resolves(meetings);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_meetings', {
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
       startDateAfter: timeRange.timeMin,
       startDateBefore: timeRange.timeMax,
     });
 
     expect(status).toBe(200);
-    expectToolData(message, meetings);
+    expectToolData(message, { ...meetings, has_more: true });
     expect(mock.calls()).toEqual([{
       method: 'meetings.list',
-      args: [timeRange],
+      args: [query],
     }]);
   });
 
   it('calls meetings.list with dates and participants as attendees', async () => {
-    const query = { ...timeRange, attendees: [user.id, task.createdBy.id] };
+    const query = {
+      ...timeRange,
+      attendees: [user.id, task.createdBy.id],
+      maxResults: 50,
+    };
     mock.meetings.list.on(query).resolves(meetings);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_meetings', {
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
       startDateAfter: timeRange.timeMin,
       startDateBefore: timeRange.timeMax,
       participants: [user.id, task.createdBy.id],
     });
 
     expect(status).toBe(200);
-    expectToolData(message, meetings);
+    expectToolData(message, { ...meetings, has_more: true });
     expect(mock.calls()).toEqual([{
       method: 'meetings.list',
       args: [query],
@@ -55,15 +60,68 @@ describe('list_meetings tool', () => {
   });
 
   it('returns a failed tool result on SDK 401', async () => {
-    mock.meetings.list.on(timeRange).rejects(errors.unauthorized);
+    mock.meetings.list.on({ ...timeRange, maxResults: 50 }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_meetings', {
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
       startDateAfter: timeRange.timeMin,
       startDateBefore: timeRange.timeMax,
     });
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);
+  });
+
+  it('forwards limit as maxResults and pageToken', async () => {
+    const query = { ...timeRange, maxResults: 10, pageToken: meetings.nextPageToken };
+    mock.meetings.list.on(query).resolves(meetings);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
+      startDateAfter: timeRange.timeMin,
+      startDateBefore: timeRange.timeMax,
+      limit: 10,
+      pageToken: meetings.nextPageToken,
+    });
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([{
+      method: 'meetings.list',
+      args: [query],
+    }]);
+    expectToolData(message, { ...meetings, has_more: true });
+  });
+
+  it('defaults maxResults to 50', async () => {
+    const query = { ...timeRange, maxResults: 50 };
+    mock.meetings.list.on(query).resolves(meetings);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
+      startDateAfter: timeRange.timeMin,
+      startDateBefore: timeRange.timeMax,
+    });
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([{
+      method: 'meetings.list',
+      args: [query],
+    }]);
+    expectToolData(message, { ...meetings, has_more: true });
+  });
+
+  it('sets has_more false when nextPageToken is null', async () => {
+    const page = { ...meetings, nextPageToken: null };
+    const query = { ...timeRange, maxResults: 50 };
+    mock.meetings.list.on(query).resolves(page);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
+      startDateAfter: timeRange.timeMin,
+      startDateBefore: timeRange.timeMax,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { ...page, has_more: false });
   });
 });

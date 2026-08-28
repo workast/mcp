@@ -10,14 +10,14 @@ import {
 
 const { list, user } = examples;
 
-describe('list_space_participants tool', () => {
+describe('workast_list_space_participants tool', () => {
   const mock = setupWorkastMock();
 
   it('calls lists.participants.list and returns users', async () => {
     mock.lists.participants.list.on(list.id).resolves([user]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_space_participants', {
+    const { status, message } = await callTool(POST, 'workast_list_space_participants', {
       spaceId: list.id,
     });
 
@@ -33,7 +33,7 @@ describe('list_space_participants tool', () => {
     mock.lists.participants.list.on(list.id).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_space_participants', {
+    const { status, message } = await callTool(POST, 'workast_list_space_participants', {
       spaceId: list.id,
     });
 

@@ -8,10 +8,16 @@ const inputSchema = z.object({
 
 export function registerListFields(server: McpServer): void {
   server.registerTool(
-    'list_fields',
+    'workast_list_fields',
     {
+      title: 'List Fields',
       description: 'List custom fields. Optionally filter to a space.',
       inputSchema,
+      annotations: {
+        title: 'List Fields',
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       if (args.spaceId) {

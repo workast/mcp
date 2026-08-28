@@ -10,7 +10,7 @@ import {
 
 const { list, user, userResource } = examples;
 
-describe('add_space_participants tool', () => {
+describe('workast_add_space_participants tool', () => {
   const mock = setupWorkastMock();
 
   it('calls lists.participants.add with users', async () => {
@@ -18,7 +18,7 @@ describe('add_space_participants tool', () => {
     mock.lists.participants.add.on(list.id, body).resolves();
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'add_space_participants', {
+    const { status, message } = await callTool(POST, 'workast_add_space_participants', {
       spaceId: list.id,
       users: body.users,
     });
@@ -35,7 +35,7 @@ describe('add_space_participants tool', () => {
     mock.lists.participants.add.on(list.id, { users: [user.id] }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'add_space_participants', {
+    const { status, message } = await callTool(POST, 'workast_add_space_participants', {
       spaceId: list.id,
       users: [user.id],
     });

@@ -13,10 +13,18 @@ const inputSchema = z.object({
 
 export function registerCreateSpace(server: McpServer): void {
   server.registerTool(
-    'create_space',
+    'workast_create_space',
     {
+      title: 'Create Space',
       description: 'Create a Workast space.',
       inputSchema,
+      annotations: {
+        title: 'Create Space',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       const body = {

@@ -10,14 +10,14 @@ import {
 
 const { list, user } = examples;
 
-describe('create_space tool', () => {
+describe('workast_create_space tool', () => {
   const mock = setupWorkastMock();
 
   it('calls lists.create with name only and does not send type', async () => {
     mock.lists.create.on({ name: list.name }).resolves(list);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_space', {
+    const { status, message } = await callTool(POST, 'workast_create_space', {
       name: list.name,
     });
 
@@ -39,7 +39,7 @@ describe('create_space tool', () => {
     mock.lists.create.on(body).resolves(list);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_space', body);
+    const { status, message } = await callTool(POST, 'workast_create_space', body);
 
     expect(status).toBe(200);
     expectToolData(message, list);
@@ -54,7 +54,7 @@ describe('create_space tool', () => {
     mock.lists.create.on({ name: list.name }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_space', {
+    const { status, message } = await callTool(POST, 'workast_create_space', {
       name: list.name,
     });
 

@@ -27,10 +27,18 @@ const inputSchema = z.object({
 
 export function registerCreateSubtasks(server: McpServer): void {
   server.registerTool(
-    'create_subtasks',
+    'workast_create_subtasks',
     {
+      title: 'Create Subtasks',
       description: 'Create one or more subtasks on a parent task.',
       inputSchema,
+      annotations: {
+        title: 'Create Subtasks',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       const created = [];

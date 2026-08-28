@@ -45,9 +45,14 @@ export function expectUnauthorizedTool(message: ToolCallMessage): void {
   expect(message.result?.content?.[0]?.text).toContain('401');
 }
 
-export function mcpRequest(
-  name: string,
-  args: Record<string, unknown>,
+export type JsonRpcMessage = {
+  result?: unknown;
+  error?: unknown;
+};
+
+export function jsonRpcRequest(
+  method: string,
+  params: Record<string, unknown> = {},
   options: { apiKey?: string | null; id?: number } = {},
 ): Request {
   const headers: Record<string, string> = {
@@ -64,10 +69,30 @@ export function mcpRequest(
     body: JSON.stringify({
       jsonrpc: '2.0',
       id: options.id ?? 1,
-      method: 'tools/call',
-      params: { name, arguments: args },
+      method,
+      params,
     }),
   });
+}
+
+export async function callJsonRpc(
+  POST: (request: Request) => Promise<Response>,
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<{ status: number; message: JsonRpcMessage }> {
+  const response = await POST(jsonRpcRequest(method, params));
+  return {
+    status: response.status,
+    message: sseData(await response.text()) as JsonRpcMessage,
+  };
+}
+
+export function mcpRequest(
+  name: string,
+  args: Record<string, unknown>,
+  options: { apiKey?: string | null; id?: number } = {},
+): Request {
+  return jsonRpcRequest('tools/call', { name, arguments: args }, options);
 }
 
 export function sseData(body: string): unknown {

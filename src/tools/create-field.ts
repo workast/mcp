@@ -15,20 +15,39 @@ const inputSchema = z.object({
 
 export function registerCreateField(server: McpServer): void {
   server.registerTool(
-    'create_field',
+    'workast_create_field',
     {
+      title: 'Create Field',
       description: 'Create a custom field and enable it on a space.',
       inputSchema,
+      annotations: {
+        title: 'Create Field',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
-      const body = {
-        name: args.name,
-        type: args.type,
-        ...(args.options != null ? { options: args.options } : {}),
-      } as CustomFieldCreate;
-      const field = await workast.fields.create(body);
-      await workast.lists.fields.enable(args.spaceId, field.id);
-      return field;
-    }),
+    async (args, ctx) => {
+      if (args.type === 'options' && (args.options == null || args.options.length === 0)) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: 'options is required when type is "options"',
+          }],
+          isError: true,
+        };
+      }
+      return runWorkast(ctx.http?.authInfo?.token, async (workast) => {
+        const body = {
+          name: args.name,
+          type: args.type,
+          ...(args.options != null ? { options: args.options } : {}),
+        } as CustomFieldCreate;
+        const field = await workast.fields.create(body);
+        await workast.lists.fields.enable(args.spaceId, field.id);
+        return field;
+      });
+    },
   );
 }

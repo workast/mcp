@@ -38,10 +38,16 @@ export function createHandler(options: CreateHandlerOptions = {}) {
 
   const handler = createMcpHandler((server) => {
     server.registerTool(
-      'ping',
+      'workast_ping',
       {
+        title: 'Ping',
         description: 'Health check. Returns ok.',
         inputSchema: z.object({}),
+        annotations: {
+          title: 'Ping',
+          openWorldHint: false,
+          readOnlyHint: true,
+        },
       },
       async () => ({
         content: [{ type: 'text', text: 'ok' }],
@@ -69,6 +75,8 @@ export function createHandler(options: CreateHandlerOptions = {}) {
     registerCreateField(server);
     registerListReports(server);
     registerRetrieveReport(server);
+  }, {
+    serverInfo: { name: 'workast-mcp-server', version: '1.0.0' },
   });
 
   const authOptions =

@@ -31,10 +31,18 @@ const inputSchema = z.object({
 
 export function registerCreateTasks(server: McpServer): void {
   server.registerTool(
-    'create_tasks',
+    'workast_create_tasks',
     {
+      title: 'Create Tasks',
       description: 'Create one or more tasks in a Workast space.',
       inputSchema,
+      annotations: {
+        title: 'Create Tasks',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       const created = [];

@@ -16,7 +16,7 @@ const createBody = {
   options: [{ name: 'High' }, { name: 'Low' }],
 };
 
-describe('create_field tool', () => {
+describe('workast_create_field tool', () => {
   const mock = setupWorkastMock();
 
   it('creates a field then enables it on the space', async () => {
@@ -24,7 +24,7 @@ describe('create_field tool', () => {
     mock.lists.fields.enable.on(list.id, customField.id).resolves();
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_field', {
+    const { status, message } = await callTool(POST, 'workast_create_field', {
       spaceId: list.id,
       ...createBody,
     });
@@ -41,7 +41,7 @@ describe('create_field tool', () => {
     mock.fields.create.on({ name: customField.name, type: 'text' }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_field', {
+    const { status, message } = await callTool(POST, 'workast_create_field', {
       spaceId: list.id,
       name: customField.name,
       type: 'text',
@@ -49,5 +49,23 @@ describe('create_field tool', () => {
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);
+  });
+
+  it('returns an error when type is options and options is missing', async () => {
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_field', {
+      spaceId: list.id,
+      name: customField.name,
+      type: 'options',
+    });
+
+    expect(status).toBe(200);
+    expect(message.error).toBeUndefined();
+    expect(message.result?.isError).toBe(true);
+    expect(message.result?.content?.[0]?.text).toBe(
+      'options is required when type is "options"',
+    );
+    expect(mock.calls()).toEqual([]);
   });
 });

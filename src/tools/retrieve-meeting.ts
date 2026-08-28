@@ -10,10 +10,16 @@ const inputSchema = z.object({
 
 export function registerRetrieveMeeting(server: McpServer): void {
   server.registerTool(
-    'retrieve_meeting',
+    'workast_retrieve_meeting',
     {
+      title: 'Retrieve Meeting',
       description: 'Retrieve a meeting. Set includeTranscript to also return recording assets.',
       inputSchema,
+      annotations: {
+        title: 'Retrieve Meeting',
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       const meeting = await workast.meetings.retrieve(args.meetingId);

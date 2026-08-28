@@ -24,10 +24,18 @@ const inputSchema = z.object({
 
 export function registerUpdateTasks(server: McpServer): void {
   server.registerTool(
-    'update_tasks',
+    'workast_update_tasks',
     {
-      description: 'Update one or more tasks. Does not change status; use complete_tasks to complete.',
+      title: 'Update Tasks',
+      description: 'Update one or more tasks. Does not change status; use workast_complete_tasks to complete.',
       inputSchema,
+      annotations: {
+        title: 'Update Tasks',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       const { taskIds, ...rest } = args;

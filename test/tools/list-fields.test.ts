@@ -10,14 +10,14 @@ import {
 
 const { customField, list } = examples;
 
-describe('list_fields tool', () => {
+describe('workast_list_fields tool', () => {
   const mock = setupWorkastMock();
 
   it('calls fields.list with no spaceId', async () => {
     mock.fields.list.on().resolves([customField]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_fields', {});
+    const { status, message } = await callTool(POST, 'workast_list_fields', {});
 
     expect(status).toBe(200);
     expectToolData(message, [customField]);
@@ -28,7 +28,7 @@ describe('list_fields tool', () => {
     mock.fields.list.on({ listId: list.id }).resolves([customField]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_fields', {
+    const { status, message } = await callTool(POST, 'workast_list_fields', {
       spaceId: list.id,
     });
 
@@ -44,7 +44,7 @@ describe('list_fields tool', () => {
     mock.fields.list.on().rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_fields', {});
+    const { status, message } = await callTool(POST, 'workast_list_fields', {});
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);

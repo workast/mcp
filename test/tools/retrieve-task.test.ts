@@ -10,14 +10,14 @@ import {
 
 const { task } = examples;
 
-describe('retrieve_task tool', () => {
+describe('workast_retrieve_task tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.retrieve and returns the task', async () => {
     mock.tasks.retrieve.on(task.id).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_task', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_task', {
       taskId: task.id,
     });
 
@@ -33,7 +33,7 @@ describe('retrieve_task tool', () => {
     mock.tasks.retrieveByShortId.on(task.shortId).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_task', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_task', {
       shortId: task.shortId,
     });
 
@@ -49,11 +49,23 @@ describe('retrieve_task tool', () => {
     mock.tasks.retrieve.on(task.id).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'retrieve_task', {
+    const { status, message } = await callTool(POST, 'workast_retrieve_task', {
       taskId: task.id,
     });
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);
+  });
+
+  it('returns an error when neither taskId nor shortId is provided', async () => {
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_retrieve_task', {});
+
+    expect(status).toBe(200);
+    expect(message.error).toBeUndefined();
+    expect(message.result?.isError).toBe(true);
+    expect(message.result?.content?.[0]?.text).toBe('Provide taskId or shortId');
+    expect(mock.calls()).toEqual([]);
   });
 });

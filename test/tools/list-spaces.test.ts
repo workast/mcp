@@ -10,64 +10,96 @@ import {
 
 const { listEnumerate, user } = examples;
 
-describe('list_spaces tool', () => {
+describe('workast_list_spaces tool', () => {
   const mock = setupWorkastMock();
 
   it('calls lists.list with no filters and returns spaces', async () => {
-    mock.lists.list.on().resolves([listEnumerate]);
+    mock.lists.list.on({ limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_spaces', {});
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {});
 
     expect(status).toBe(200);
-    expectToolData(message, [listEnumerate]);
-    expect(mock.calls()).toEqual([{ method: 'lists.list', args: [] }]);
+    expectToolData(message, {
+      spaces: [listEnumerate],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+    expect(mock.calls()).toEqual([{
+      method: 'lists.list',
+      args: [{ limit: 50, skip: 0 }],
+    }]);
   });
 
   it('calls lists.list with type when type is set', async () => {
-    mock.lists.list.on({ type: 'group' }).resolves([listEnumerate]);
+    mock.lists.list.on({ type: 'group', limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_spaces', { type: 'group' });
+    const { status, message } = await callTool(POST, 'workast_list_spaces', { type: 'group' });
 
     expect(status).toBe(200);
-    expectToolData(message, [listEnumerate]);
+    expectToolData(message, {
+      spaces: [listEnumerate],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
     expect(mock.calls()).toEqual([{
       method: 'lists.list',
-      args: [{ type: 'group' }],
+      args: [{ type: 'group', limit: 50, skip: 0 }],
     }]);
   });
 
   it('calls lists.list with participants when participants is set', async () => {
-    mock.lists.list.on({ participants: [user.id] }).resolves([listEnumerate]);
+    mock.lists.list.on({ participants: [user.id], limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_spaces', {
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
       participants: [user.id],
     });
 
     expect(status).toBe(200);
-    expectToolData(message, [listEnumerate]);
+    expectToolData(message, {
+      spaces: [listEnumerate],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
     expect(mock.calls()).toEqual([{
       method: 'lists.list',
-      args: [{ participants: [user.id] }],
+      args: [{ participants: [user.id], limit: 50, skip: 0 }],
     }]);
   });
 
   it('calls lists.list with type and participants', async () => {
-    mock.lists.list.on({ type: 'group', participants: [user.id] }).resolves([listEnumerate]);
+    mock.lists.list.on({
+      type: 'group',
+      participants: [user.id],
+      limit: 50,
+      skip: 0,
+    }).resolves([listEnumerate]);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_spaces', {
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
       type: 'group',
       participants: [user.id],
     });
 
     expect(status).toBe(200);
-    expectToolData(message, [listEnumerate]);
+    expectToolData(message, {
+      spaces: [listEnumerate],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
     expect(mock.calls()).toEqual([{
       method: 'lists.list',
-      args: [{ type: 'group', participants: [user.id] }],
+      args: [{ type: 'group', participants: [user.id], limit: 50, skip: 0 }],
     }]);
   });
 
@@ -75,9 +107,75 @@ describe('list_spaces tool', () => {
     mock.lists.list.on().rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'list_spaces', {});
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {});
 
     expect(status).toBe(200);
     expectUnauthorizedTool(message);
+  });
+
+  it('forwards limit and skip to lists.list', async () => {
+    mock.lists.list.on({ limit: 10, skip: 20 }).resolves([listEnumerate]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
+      limit: 10,
+      skip: 20,
+    });
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([{
+      method: 'lists.list',
+      args: [{ limit: 10, skip: 20 }],
+    }]);
+    expectToolData(message, {
+      spaces: [listEnumerate],
+      count: 1,
+      skip: 20,
+      has_more: false,
+      next_skip: null,
+    });
+  });
+
+  it('defaults to limit 50 and skip 0', async () => {
+    mock.lists.list.on({ limit: 50, skip: 0 }).resolves([listEnumerate]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {});
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([{
+      method: 'lists.list',
+      args: [{ limit: 50, skip: 0 }],
+    }]);
+    expectToolData(message, {
+      spaces: [listEnumerate],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+  });
+
+  it('sets has_more true when the page is full', async () => {
+    const spaces = [
+      listEnumerate,
+      { ...listEnumerate, id: `${listEnumerate.id}-2` },
+    ];
+    mock.lists.list.on({ limit: 2, skip: 0 }).resolves(spaces);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
+      limit: 2,
+      skip: 0,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, {
+      spaces,
+      count: 2,
+      skip: 0,
+      has_more: true,
+      next_skip: 2,
+    });
   });
 });

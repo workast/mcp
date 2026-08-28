@@ -10,10 +10,16 @@ const inputSchema = z.object({
 
 export function registerRetrieveReport(server: McpServer): void {
   server.registerTool(
-    'retrieve_report',
+    'workast_retrieve_report',
     {
+      title: 'Retrieve Report',
       description: 'Retrieve a saved report by ID, including the report\'s tasks.',
       inputSchema,
+      annotations: {
+        title: 'Retrieve Report',
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => (
       workast.searches.retrieve(args.reportId, { getTasks: args.getTasks })

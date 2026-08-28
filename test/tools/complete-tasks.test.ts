@@ -10,7 +10,7 @@ import {
 
 const { task, user } = examples;
 
-describe('complete_tasks tool', () => {
+describe('workast_complete_tasks tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.complete for each taskId', async () => {
@@ -18,7 +18,7 @@ describe('complete_tasks tool', () => {
     mock.tasks.complete.on(user.id).resolves();
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'complete_tasks', {
+    const { status, message } = await callTool(POST, 'workast_complete_tasks', {
       taskIds: [task.id, user.id],
     });
 
@@ -34,7 +34,7 @@ describe('complete_tasks tool', () => {
     mock.tasks.complete.on(task.id).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'complete_tasks', {
+    const { status, message } = await callTool(POST, 'workast_complete_tasks', {
       taskIds: [task.id],
     });
 

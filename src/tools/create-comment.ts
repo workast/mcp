@@ -9,10 +9,18 @@ const inputSchema = z.object({
 
 export function registerCreateComment(server: McpServer): void {
   server.registerTool(
-    'create_comment',
+    'workast_create_comment',
     {
+      title: 'Create Comment',
       description: 'Add a top-level comment to a task.',
       inputSchema,
+      annotations: {
+        title: 'Create Comment',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => (
       workast.tasks.activities.create(args.taskId, {

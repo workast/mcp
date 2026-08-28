@@ -12,7 +12,7 @@ description: >-
 
 Copy a nearby tool (for example `src/tools/create-tasks.ts` and `test/tools/create-tasks.test.ts`). One SDK method → one tool file + one test file. Explicit import in `src/create-handler.ts` — no auto-registry. Auth stays in `src/auth/verify-api-key.ts`; tools only read `ctx.http?.authInfo?.token`. Types and examples come from `@workast/sdk` / `@workast/sdk/mock`. Do not add OAuth, retries, or extra abstraction layers.
 
-Canonical example: `create_tasks` → `workast.tasks.create(spaceId, body)` via `createWorkast` in `src/workast.ts`. Tool args use UI names (`spaceId`, `reportId`); SDK paths stay `/list`, `/search`.
+Canonical example: `workast_create_tasks` → `workast.tasks.create(spaceId, body)` via `createWorkast` in `src/workast.ts`. Tool args use UI names (`spaceId`, `reportId`); SDK paths stay `/list`, `/search`. Tool names always use the `workast_` prefix.
 
 ## Layout
 
@@ -27,7 +27,7 @@ Canonical example: `create_tasks` → `workast.tasks.create(spaceId, body)` via 
 | Run | `src/run-tool.ts` — `runWorkast(token, fn)` (missing token + `ApiError`) |
 | Helpers | `test/helpers.ts` — `setupWorkastMock`, `callTool`, `expectToolData`, `mcpRequest` |
 
-Tool name is the MCP name: `list_spaces`, `create_tasks`, `retrieve_report`. File slug uses hyphens: `list-spaces.ts`. Register fn is `register` + PascalCase tool: `registerListSpaces`.
+Tool name is the MCP name with a `workast_` prefix: `workast_list_spaces`, `workast_create_tasks`, `workast_retrieve_report`. File slug uses hyphens: `list-spaces.ts`. Register fn is `register` + PascalCase tool: `registerListSpaces`. Every new tool must set `title` and annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` as appropriate, and `openWorldHint: false`.
 
 ## 1. Resolve the SDK method
 
@@ -62,7 +62,7 @@ Add `src/tools/<tool-name>.ts`. Pattern from `create-tasks`:
 
 - Export `registerCreateTasks(server)` (name = `register` + PascalCase tool).
 - Call `runWorkast` from `../run-tool`. Do not take a `createWorkast` dependency in the tool file.
-- `server.registerTool('create_tasks', { description, inputSchema }, handler)`.
+- `server.registerTool('workast_create_tasks', { title, description, inputSchema, annotations }, handler)`.
 - Zod `inputSchema`: UI path ids first (`spaceId`, `taskId`, …), then swagger/SDK body fields as optional/required Zod fields — do not invent fields. Cast the body slice to the SDK type (`TaskCreate`, …) from `@workast/sdk`.
 - Handler: `runWorkast(ctx.http?.authInfo?.token, async (workast) => { … })`. Success → JSON text of the SDK return value (or `{ ok: true }` when the SDK is void). `ApiError` → failed tool result with `message (status)`; unknowns rethrow.
 
@@ -72,7 +72,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { runWorkast } from '../run-tool';
 
-// registerTool('create_tasks', …) → workast.tasks.create(spaceId, body)
+// registerTool('workast_create_tasks', …) → workast.tasks.create(spaceId, body)
 ```
 
 ## 4. Register explicitly
@@ -104,8 +104,8 @@ Do not start the next tool until green.
 
 ## Conventions
 
-- Naming: MCP `retrieve_task` → files `retrieve-task.ts` / `retrieve-task.test.ts` → `registerRetrieveTask`.
+- Naming: MCP `workast_retrieve_task` → files `retrieve-task.ts` / `retrieve-task.test.ts` → `registerRetrieveTask`. Always prefix tool names with `workast_`.
+- Every tool sets `title` plus annotations (`readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint: false`).
 - Input = UI ids (`spaceId`, not `listId`) + SDK body/query fields; types from `@workast/sdk`.
 - Return JSON text content (SDK payload pass-through); map `ApiError` to `isError: true` tool results.
-- Keep `ping` as the no-API health tool behind the same auth wrapper.
-- Agent host only — no OAuth, no `/.well-known/*`.
+- Keep `workast_ping` as the no-API health tool behind the same auth wrapper.

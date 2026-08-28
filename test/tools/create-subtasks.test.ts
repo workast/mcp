@@ -22,14 +22,14 @@ const optionalSubtask = {
   fields: [{ id: customField.id, value: 'High' }],
 };
 
-describe('create_subtasks tool', () => {
+describe('workast_create_subtasks tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.subtasks.create for a required-only item', async () => {
     mock.tasks.subtasks.create.on(task.id, { text: task.text }).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_subtasks', {
+    const { status, message } = await callTool(POST, 'workast_create_subtasks', {
       parentTaskId: task.id,
       subtasks: [{ text: task.text }],
     });
@@ -46,7 +46,7 @@ describe('create_subtasks tool', () => {
     mock.tasks.subtasks.create.on(task.id, optionalSubtask).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_subtasks', {
+    const { status, message } = await callTool(POST, 'workast_create_subtasks', {
       parentTaskId: task.id,
       subtasks: [optionalSubtask],
     });
@@ -63,7 +63,7 @@ describe('create_subtasks tool', () => {
     mock.tasks.subtasks.create.on(task.id, { text: task.text }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_subtasks', {
+    const { status, message } = await callTool(POST, 'workast_create_subtasks', {
       parentTaskId: task.id,
       subtasks: [{ text: task.text }],
     });

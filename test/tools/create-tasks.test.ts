@@ -26,14 +26,14 @@ const optionalTask = {
   fields: [{ id: customField.id, value: 'High' }],
 };
 
-describe('create_tasks tool', () => {
+describe('workast_create_tasks tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.create for a required-only item', async () => {
     mock.tasks.create.on(list.id, { text: task.text }).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_tasks', {
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
       spaceId: list.id,
       tasks: [{ text: task.text }],
     });
@@ -50,7 +50,7 @@ describe('create_tasks tool', () => {
     mock.tasks.create.on(list.id, optionalTask).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_tasks', {
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
       spaceId: list.id,
       tasks: [optionalTask],
     });
@@ -67,7 +67,7 @@ describe('create_tasks tool', () => {
     mock.tasks.create.on(list.id, { text: task.text }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'create_tasks', {
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
       spaceId: list.id,
       tasks: [{ text: task.text }],
     });

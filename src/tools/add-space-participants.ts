@@ -9,10 +9,18 @@ const inputSchema = z.object({
 
 export function registerAddSpaceParticipants(server: McpServer): void {
   server.registerTool(
-    'add_space_participants',
+    'workast_add_space_participants',
     {
+      title: 'Add Space Participants',
       description: 'Add participants to a Workast space.',
       inputSchema,
+      annotations: {
+        title: 'Add Space Participants',
+        openWorldHint: false,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
       await workast.lists.participants.add(args.spaceId, { users: args.users });

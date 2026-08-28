@@ -43,28 +43,34 @@ Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workas
 
 | Tool | Description |
 | --- | --- |
-| `ping` | Health check (requires auth) |
-| `list_spaces` | List spaces (`type`, `participants`) |
-| `create_space` | Create a space (`name`, optional `participants`, `privacy`) |
-| `add_space_participants` | Add users to a space (`spaceId`, `users`) |
-| `list_space_participants` | List space participants (`spaceId`) |
-| `create_sublist` | Create a sublist (`spaceId`, `name`) |
-| `list_coworkers` | List teammates |
-| `about_me` | Current user and team |
-| `search_tasks` | Search tasks with filters (`spaceId`, `statusIs`, …) |
-| `retrieve_task` | Get a task (`taskId` or `shortId`) |
-| `create_tasks` | Create tasks in a space (`spaceId`, `tasks[]`) |
-| `create_subtasks` | Create subtasks (`parentTaskId`, `subtasks[]`) |
-| `update_tasks` | Patch tasks (`taskIds[]` plus fields; no `status`) |
-| `complete_tasks` | Mark tasks done (`taskIds[]`) |
-| `create_comment` | Comment on a task (`taskId`, `comment`) |
-| `list_task_activity` | Task activity (`taskId`, optional `type`) |
-| `list_meetings` | List meetings (`startDateAfter`, `startDateBefore`, `participants`) |
-| `retrieve_meeting` | Get a meeting (`meetingId`, optional `includeTranscript`) |
-| `list_fields` | List custom fields (optional `spaceId`) |
-| `create_field` | Create a field and enable it on a space |
-| `list_reports` | List saved reports (optional `home`) |
-| `retrieve_report` | Get a report and its tasks (`reportId`, optional `getTasks`) |
+| `workast_ping` | Health check (requires auth) |
+| `workast_list_spaces` | List spaces (`type`, `participants`, `limit`, `skip`) |
+| `workast_create_space` | Create a space (`name`, optional `participants`, `privacy`) |
+| `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
+| `workast_list_space_participants` | List space participants (`spaceId`) |
+| `workast_create_sublist` | Create a sublist (`spaceId`, `name`) |
+| `workast_list_coworkers` | List teammates (`limit`, `offset`) |
+| `workast_about_me` | Current user and team |
+| `workast_search_tasks` | Search tasks with filters (`spaceId`, `statusIs`, `limit`, `skip`, …) |
+| `workast_retrieve_task` | Get a task (`taskId` or `shortId`) |
+| `workast_create_tasks` | Create tasks in a space (`spaceId`, `tasks[]`) |
+| `workast_create_subtasks` | Create subtasks (`parentTaskId`, `subtasks[]`) |
+| `workast_update_tasks` | Patch tasks (`taskIds[]` plus fields; no `status`) |
+| `workast_complete_tasks` | Mark tasks done (`taskIds[]`) |
+| `workast_create_comment` | Comment on a task (`taskId`, `comment`) |
+| `workast_list_task_activity` | Task activity (`taskId`, optional `type`, `limit`, `skip`) |
+| `workast_list_meetings` | List meetings (`startDateAfter`, `startDateBefore`, `participants`, `limit`, `pageToken`) |
+| `workast_retrieve_meeting` | Get a meeting (`meetingId`, optional `includeTranscript`) |
+| `workast_list_fields` | List custom fields (optional `spaceId`) |
+| `workast_create_field` | Create a field and enable it on a space |
+| `workast_list_reports` | List saved reports (optional `home`, `limit`, `skip`) |
+| `workast_retrieve_report` | Get a report and its tasks (`reportId`, optional `getTasks`) |
+
+List and search tools accept page size and offset (`limit`/`skip`, or `limit`/`offset` for coworkers). Meetings use `limit` (sent as `maxResults`) and an optional `pageToken`. Responses include `has_more` and the next page cursor (`next_skip`, `next_offset`, or `nextPageToken`) so clients can keep paging.
+
+## Response size
+
+Tool results are truncated at 25,000 characters. Oversized list responses set `truncated: true` and a `truncation_message` that tells the client to paginate or add filters. Use `limit`/`skip` (or `pageToken` for meetings) to fetch the rest.
 
 ## Local development
 
