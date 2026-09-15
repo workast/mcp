@@ -8,7 +8,7 @@ import {
   setupWorkastMock,
 } from '../helpers';
 
-const { customField, list, meeting, subList, tag, task, user } = examples;
+const { customField, tag, task, user } = examples;
 
 const optionalTaskInput = {
   summary: task.text,
@@ -17,9 +17,7 @@ const optionalTaskInput = {
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
   dueDateTime: '17:00:00',
-  subListId: subList.id,
   tags: [tag.id],
-  meetingId: meeting.id,
   fields: [{ id: customField.id, value: 'High' }],
 };
 
@@ -30,21 +28,18 @@ const optionalTaskBody = {
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
   dueDateTime: '17:00:00',
-  subListId: subList.id,
   tags: [tag.id],
-  meetingId: meeting.id,
   fields: [{ id: customField.id, value: 'High' }],
 };
 
-describe('workast_create_tasks tool', () => {
+describe('workast_create_personal_tasks tool', () => {
   const mock = setupWorkastMock();
 
-  it('calls tasks.create for a required-only item', async () => {
-    mock.tasks.create.on(list.id, { text: task.text }).resolves(task);
+  it('calls tasks.createPersonal for a required-only item', async () => {
+    mock.tasks.createPersonal.on({ text: task.text }).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'workast_create_tasks', {
-      spaceId: list.id,
+    const { status, message } = await callTool(POST, 'workast_create_personal_tasks', {
       tasks: [{ summary: task.text }],
     });
 
@@ -53,17 +48,16 @@ describe('workast_create_tasks tool', () => {
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
-      method: 'tasks.create',
-      args: [list.id, { text: task.text }],
+      method: 'tasks.createPersonal',
+      args: [{ text: task.text }],
     }]);
   });
 
-  it('calls tasks.create with the optional fields that were passed', async () => {
-    mock.tasks.create.on(list.id, optionalTaskBody).resolves(task);
+  it('calls tasks.createPersonal with the optional fields that were passed', async () => {
+    mock.tasks.createPersonal.on(optionalTaskBody).resolves(task);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'workast_create_tasks', {
-      spaceId: list.id,
+    const { status, message } = await callTool(POST, 'workast_create_personal_tasks', {
       tasks: [optionalTaskInput],
     });
 
@@ -72,18 +66,17 @@ describe('workast_create_tasks tool', () => {
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
-      method: 'tasks.create',
-      args: [list.id, optionalTaskBody],
+      method: 'tasks.createPersonal',
+      args: [optionalTaskBody],
     }]);
   });
 
   it('returns a partial batch result when the second create fails', async () => {
-    mock.tasks.create.on(list.id, { text: task.text }).resolves(task);
-    mock.tasks.create.on(list.id, { text: task.text }).rejects(errors.unauthorized);
+    mock.tasks.createPersonal.on({ text: task.text }).resolves(task);
+    mock.tasks.createPersonal.on({ text: task.text }).rejects(errors.unauthorized);
     const POST = createHandler();
 
-    const { status, message } = await callTool(POST, 'workast_create_tasks', {
-      spaceId: list.id,
+    const { status, message } = await callTool(POST, 'workast_create_personal_tasks', {
       tasks: [{ summary: task.text }, { summary: task.text }],
     });
 
@@ -95,8 +88,8 @@ describe('workast_create_tasks tool', () => {
     }, { tasks: [task] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
-      { method: 'tasks.create', args: [list.id, { text: task.text }] },
-      { method: 'tasks.create', args: [list.id, { text: task.text }] },
+      { method: 'tasks.createPersonal', args: [{ text: task.text }] },
+      { method: 'tasks.createPersonal', args: [{ text: task.text }] },
     ]);
   });
 });

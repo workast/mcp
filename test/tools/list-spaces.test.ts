@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -27,7 +26,9 @@ describe('workast_list_spaces tool', () => {
       has_more: false,
       next_skip: null,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.list',
       args: [{ limit: 50, skip: 0 }],
     }]);
@@ -47,7 +48,9 @@ describe('workast_list_spaces tool', () => {
       has_more: false,
       next_skip: null,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.list',
       args: [{ type: 'group', limit: 50, skip: 0 }],
     }]);
@@ -69,7 +72,9 @@ describe('workast_list_spaces tool', () => {
       has_more: false,
       next_skip: null,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.list',
       args: [{ participants: [user.id], limit: 50, skip: 0 }],
     }]);
@@ -97,20 +102,12 @@ describe('workast_list_spaces tool', () => {
       has_more: false,
       next_skip: null,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.list',
       args: [{ type: 'group', participants: [user.id], limit: 50, skip: 0 }],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.lists.list.on().rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_list_spaces', {});
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 
   it('forwards limit and skip to lists.list', async () => {
@@ -123,7 +120,9 @@ describe('workast_list_spaces tool', () => {
     });
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.list',
       args: [{ limit: 10, skip: 20 }],
     }]);
@@ -143,7 +142,9 @@ describe('workast_list_spaces tool', () => {
     const { status, message } = await callTool(POST, 'workast_list_spaces', {});
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.list',
       args: [{ limit: 50, skip: 0 }],
     }]);

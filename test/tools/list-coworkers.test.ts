@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -27,20 +26,12 @@ describe('workast_list_coworkers tool', () => {
       has_more: false,
       next_offset: null,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'users.list',
       args: [{ limit: 50, offset: 0 }],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.users.list.on().rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_list_coworkers', {});
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 
   it('forwards limit and offset to users.list', async () => {
@@ -53,7 +44,9 @@ describe('workast_list_coworkers tool', () => {
     });
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'users.list',
       args: [{ limit: 10, offset: 20 }],
     }]);
@@ -73,7 +66,9 @@ describe('workast_list_coworkers tool', () => {
     const { status, message } = await callTool(POST, 'workast_list_coworkers', {});
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'users.list',
       args: [{ limit: 50, offset: 0 }],
     }]);

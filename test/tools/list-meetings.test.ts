@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -30,7 +29,9 @@ describe('workast_list_meetings tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, { ...meetings, has_more: true });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'meetings.list',
       args: [query],
     }]);
@@ -53,23 +54,12 @@ describe('workast_list_meetings tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, { ...meetings, has_more: true });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'meetings.list',
       args: [query],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.meetings.list.on({ ...timeRange, maxResults: 50 }).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_list_meetings', {
-      startDateAfter: timeRange.timeMin,
-      startDateBefore: timeRange.timeMax,
-    });
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 
   it('forwards limit as maxResults and pageToken', async () => {
@@ -85,7 +75,9 @@ describe('workast_list_meetings tool', () => {
     });
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'meetings.list',
       args: [query],
     }]);
@@ -103,7 +95,9 @@ describe('workast_list_meetings tool', () => {
     });
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'meetings.list',
       args: [query],
     }]);

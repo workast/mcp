@@ -4,38 +4,45 @@ import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
+  expectToolError,
   setupWorkastMock,
 } from '../helpers';
 
 const { task, user } = examples;
 
-const patch = {
+const patchInput = {
+  summary: task.text,
+  description: task.description,
+  dueDate: '2026-04-12T00:00:00.000Z',
+};
+
+const patchBody = {
   text: task.text,
   description: task.description,
   dueDate: '2026-04-12T00:00:00.000Z',
-  dueDateTimezone: 'UTC',
 };
 
 describe('workast_update_tasks tool', () => {
   const mock = setupWorkastMock();
 
   it('calls tasks.update with patch fields and no status', async () => {
-    mock.tasks.update.on(task.id, patch).resolves();
+    mock.tasks.update.on(task.id, patchBody).resolves();
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_update_tasks', {
       taskIds: [task.id],
-      ...patch,
+      ...patchInput,
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ok: true });
-    expect(mock.calls()).toEqual([{
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'tasks.update',
-      args: [task.id, patch],
+      args: [task.id, patchBody],
     }]);
-    expect(mock.calls()[0].args[1]).not.toHaveProperty('status');
+    expect(mock.calls()[1].args[1]).not.toHaveProperty('status');
   });
 
   it('calls tasks.update for each id when updating two tasks', async () => {
@@ -45,28 +52,39 @@ describe('workast_update_tasks tool', () => {
 
     const { status, message } = await callTool(POST, 'workast_update_tasks', {
       taskIds: [task.id, user.id],
-      text: task.text,
+      summary: task.text,
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ok: true });
+    expectToolData(message, { succeeded: [task.id, user.id] });
     expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.update', args: [task.id, { text: task.text }] },
       { method: 'tasks.update', args: [user.id, { text: task.text }] },
     ]);
-    expect(mock.calls()[0].args[1]).not.toHaveProperty('status');
+    expect(mock.calls()[1].args[1]).not.toHaveProperty('status');
   });
 
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.tasks.update.on(task.id, { text: task.text }).rejects(errors.unauthorized);
+  it('returns a partial batch result when the second update fails', async () => {
+    mock.tasks.update.on(task.id, { text: task.text }).resolves();
+    mock.tasks.update.on(user.id, { text: task.text }).rejects(errors.unauthorized);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_update_tasks', {
-      taskIds: [task.id],
-      text: task.text,
+      taskIds: [task.id, user.id],
+      summary: task.text,
     });
 
     expect(status).toBe(200);
-    expectUnauthorizedTool(message);
+    expectToolError(message, {
+      param: 'taskIds[1]',
+      message: /Unauthorized/,
+      status: 401,
+    }, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, { text: task.text }] },
+      { method: 'tasks.update', args: [user.id, { text: task.text }] },
+    ]);
   });
 });

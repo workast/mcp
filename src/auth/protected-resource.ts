@@ -4,12 +4,9 @@ import {
   protectedResourceHandler,
 } from 'mcp-handler';
 
-export function getProtectedResourceHandlers(options: {
-  authMode?: 'agent' | 'user';
-  authUrl?: string;
-}) {
-  const authMode = options.authMode ?? process.env.MCP_AUTH_MODE ?? 'agent';
-  const authUrl = options.authUrl ?? process.env.WORKAST_AUTH_URL;
+export function getProtectedResourceHandlers() {
+  const authMode = process.env.MCP_AUTH_MODE ?? 'agent';
+  const authUrl = process.env.WORKAST_AUTH_URL;
   const corsHandler = metadataCorsOptionsRequestHandler();
   if (authMode !== 'user') {
     const notFound = async () => new Response(null, { status: 404 });

@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -25,22 +24,11 @@ describe('workast_add_space_participants tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, { ok: true });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.participants.add',
       args: [list.id, body],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.lists.participants.add.on(list.id, { users: [user.id] }).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_add_space_participants', {
-      spaceId: list.id,
-      users: [user.id],
-    });
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 });

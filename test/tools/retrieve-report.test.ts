@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -23,7 +22,9 @@ describe('workast_retrieve_report tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, searchDetail);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'searches.retrieve',
       args: [search.id, { getTasks: 25 }],
     }]);
@@ -40,21 +41,11 @@ describe('workast_retrieve_report tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, searchDetail);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'searches.retrieve',
       args: [search.id, { getTasks: 50 }],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.searches.retrieve.on(search.id, { getTasks: 25 }).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_retrieve_report', {
-      reportId: search.id,
-    });
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 });

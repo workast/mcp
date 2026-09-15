@@ -1,4 +1,4 @@
-import type { MeetingSearchQuery } from '@workast/sdk';
+import type { Meetings, MeetingSearchQuery } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { runWorkast } from '../run-tool';
@@ -21,13 +21,14 @@ export function registerListMeetings(server: McpServer): void {
       title: 'List Meetings',
       description: 'List meetings in a time range. Optionally filter by participants.',
       inputSchema,
+      outputSchema: z.looseObject({ has_more: z.boolean() }),
       annotations: {
         title: 'List Meetings',
         openWorldHint: false,
         readOnlyHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_meetings', async (workast) => {
       const query: MeetingSearchQuery = {
         timeMin: args.startDateAfter,
         timeMax: args.startDateBefore,
@@ -39,7 +40,7 @@ export function registerListMeetings(server: McpServer): void {
       if (args.pageToken != null) {
         query.pageToken = args.pageToken;
       }
-      const result = await workast.meetings.list(query);
+      const result: Meetings = await workast.meetings.list(query);
       return {
         ...result,
         has_more: result.nextPageToken !== null,

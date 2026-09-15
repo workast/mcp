@@ -6,6 +6,7 @@ import { registerAddSpaceParticipants } from './tools/add-space-participants';
 import { registerCompleteTasks } from './tools/complete-tasks';
 import { registerCreateComment } from './tools/create-comment';
 import { registerCreateField } from './tools/create-field';
+import { registerCreatePersonalTasks } from './tools/create-personal-tasks';
 import { registerCreateSpace } from './tools/create-space';
 import { registerCreateSublist } from './tools/create-sublist';
 import { registerCreateSubtasks } from './tools/create-subtasks';
@@ -19,18 +20,13 @@ import { registerListSpaces } from './tools/list-spaces';
 import { registerListTaskActivity } from './tools/list-task-activity';
 import { registerRetrieveMeeting } from './tools/retrieve-meeting';
 import { registerRetrieveReport } from './tools/retrieve-report';
-import { registerRetrieveTask } from './tools/retrieve-task';
+import { registerRetrieveTasks } from './tools/retrieve-tasks';
 import { registerSearchTasks } from './tools/search-tasks';
 import { registerUpdateTasks } from './tools/update-tasks';
 
-type CreateHandlerOptions = {
-  authMode?: 'agent' | 'user';
-  authUrl?: string;
-};
-
-export function createHandler(options: CreateHandlerOptions = {}) {
-  const authMode = options.authMode ?? process.env.MCP_AUTH_MODE ?? 'agent';
-  const authUrl = options.authUrl ?? process.env.WORKAST_AUTH_URL;
+export function createHandler() {
+  const authMode = process.env.MCP_AUTH_MODE ?? 'agent';
+  const authUrl = process.env.WORKAST_AUTH_URL;
 
   if (authMode === 'user' && !authUrl) {
     throw new Error('WORKAST_AUTH_URL is required when MCP_AUTH_MODE=user');
@@ -43,15 +39,20 @@ export function createHandler(options: CreateHandlerOptions = {}) {
         title: 'Ping',
         description: 'Health check. Returns ok.',
         inputSchema: z.object({}),
+        outputSchema: z.object({ ok: z.literal(true) }),
         annotations: {
           title: 'Ping',
           openWorldHint: false,
           readOnlyHint: true,
         },
       },
-      async () => ({
-        content: [{ type: 'text', text: 'ok' }],
-      }),
+      async () => {
+        const result = { ok: true as const };
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result) }],
+          structuredContent: result,
+        };
+      },
     );
 
     registerListSpaces(server);
@@ -62,8 +63,9 @@ export function createHandler(options: CreateHandlerOptions = {}) {
     registerListCoworkers(server);
     registerAboutMe(server);
     registerSearchTasks(server);
-    registerRetrieveTask(server);
+    registerRetrieveTasks(server);
     registerCreateTasks(server);
+    registerCreatePersonalTasks(server);
     registerCreateSubtasks(server);
     registerUpdateTasks(server);
     registerCompleteTasks(server);
@@ -79,17 +81,8 @@ export function createHandler(options: CreateHandlerOptions = {}) {
     serverInfo: { name: 'workast-mcp-server', version: '1.0.0' },
   });
 
-  const authOptions =
-    authMode === 'user'
-      ? {
-          required: true as const,
-          resourceMetadataPath: '/.well-known/oauth-protected-resource',
-        }
-      : {
-          required: true as const,
-          // mcp-handler defaults resourceMetadataPath; empty values omit resource_metadata on 401.
-          resourceMetadataPath: '',
-          resourceUrl: '',
-        };
-  return withMcpAuth(handler, verifyApiKey, authOptions);
+  return withMcpAuth(handler, verifyApiKey, {
+    required: true,
+    resourceMetadataPath: '/.well-known/oauth-protected-resource',
+  });
 }

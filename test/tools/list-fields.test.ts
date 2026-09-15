@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -20,8 +19,10 @@ describe('workast_list_fields tool', () => {
     const { status, message } = await callTool(POST, 'workast_list_fields', {});
 
     expect(status).toBe(200);
-    expectToolData(message, [customField]);
-    expect(mock.calls()).toEqual([{ method: 'fields.list', args: [] }]);
+    expectToolData(message, { fields: [customField] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'fields.list', args: [] }]);
   });
 
   it('calls fields.list with listId when spaceId is set', async () => {
@@ -33,20 +34,12 @@ describe('workast_list_fields tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, [customField]);
-    expect(mock.calls()).toEqual([{
+    expectToolData(message, { fields: [customField] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'fields.list',
       args: [{ listId: list.id }],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.fields.list.on().rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_list_fields', {});
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 });

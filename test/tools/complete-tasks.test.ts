@@ -4,7 +4,7 @@ import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
+  expectToolError,
   setupWorkastMock,
 } from '../helpers';
 
@@ -23,22 +23,33 @@ describe('workast_complete_tasks tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ok: true });
+    expectToolData(message, { succeeded: [task.id, user.id] });
     expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.complete', args: [task.id] },
       { method: 'tasks.complete', args: [user.id] },
     ]);
   });
 
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.tasks.complete.on(task.id).rejects(errors.unauthorized);
+  it('returns a partial batch result when the second complete fails', async () => {
+    mock.tasks.complete.on(task.id).resolves();
+    mock.tasks.complete.on(user.id).rejects(errors.unauthorized);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_complete_tasks', {
-      taskIds: [task.id],
+      taskIds: [task.id, user.id],
     });
 
     expect(status).toBe(200);
-    expectUnauthorizedTool(message);
+    expectToolError(message, {
+      param: 'taskIds[1]',
+      message: /Unauthorized/,
+      status: 401,
+    }, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.complete', args: [task.id] },
+      { method: 'tasks.complete', args: [user.id] },
+    ]);
   });
 });

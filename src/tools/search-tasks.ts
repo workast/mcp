@@ -3,12 +3,19 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { runWorkast } from '../run-tool';
 
+const outputSchema = z.looseObject({
+  count: z.number(),
+  skip: z.number(),
+  has_more: z.boolean(),
+  next_skip: z.number().nullable(),
+});
+
 const inputSchema = z.object({
   q: z.string().optional().describe('Filter by task summary text'),
   statusIs: z.enum(['pending', 'done', 'removed']).optional()
     .describe('Filter by task status'),
   assignedTo: z.array(z.string()).optional()
-    .describe('Filter by assigned user IDs'),
+    .describe('Filter by assigned user IDs (not names or emails). Use workast_list_coworkers to look up IDs.'),
   dueDateAfter: z.string().optional()
     .describe('Filter tasks due on or after this ISO date'),
   dueDateBefore: z.string().optional()
@@ -26,10 +33,10 @@ const inputSchema = z.object({
   completedAfter: z.string().optional()
     .describe('Filter tasks completed on or after this ISO date'),
   tags: z.array(z.string()).optional()
-    .describe('Filter by tag IDs'),
+    .describe('Filter by tag IDs (not names). Use IDs from existing tasks or search results.'),
   customFields: z.array(z.object({
-    fieldId: z.string(),
-    value: z.string(),
+    fieldId: z.string().describe('Custom field ID from workast_list_fields'),
+    value: z.string().describe('Value to match on that field'),
   })).optional()
     .describe('Filter by custom field values'),
   limit: z.number().int().min(1).max(100).default(25)
@@ -130,13 +137,14 @@ export function registerSearchTasks(server: McpServer): void {
       title: 'Search Tasks',
       description: 'Search tasks with filters. Multiple filters are combined with AND.',
       inputSchema,
+      outputSchema,
       annotations: {
         title: 'Search Tasks',
         openWorldHint: false,
         readOnlyHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_search_tasks', async (workast) => {
       const body = {
         predicates: compilePredicates(args),
         includeSubTasks: true,
