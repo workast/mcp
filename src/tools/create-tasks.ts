@@ -5,7 +5,7 @@ import { entitySchema, runWorkast, toolErrorFrom } from '../run-tool';
 
 const taskSchema = z.object({
   summary: z.string().describe('Task summary (title). Prefer this over description.'),
-  assignedTo: z.array(z.string()).optional()
+  assignedTo: z.array(z.string()).max(50).optional()
     .describe('User IDs to assign (not names or emails). Use workast_list_coworkers or workast_list_space_participants to look up IDs.'),
   description: z.string().optional()
     .describe('Longer task details. Only set when extra context is needed beyond the summary.'),
@@ -16,7 +16,7 @@ const taskSchema = z.object({
     .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
   subListId: z.string().optional()
     .describe('Sublist ID to place the task in'),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).max(50).optional()
     .describe('Tag IDs to add (not names). Use IDs from existing tasks or search results.'),
   meetingId: z.string().optional()
     .describe('Meeting ID to associate. Use workast_list_meetings to look up IDs.'),
@@ -25,13 +25,14 @@ const taskSchema = z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
       value: z.string().describe('Value to set on the field'),
     }))
+    .max(50)
     .optional()
     .describe('Custom field values. Use workast_list_fields to get field IDs.'),
 });
 
 const inputSchema = z.object({
   spaceId: z.string().describe('Space ID to create the tasks in'),
-  tasks: z.array(taskSchema).min(1).describe('Tasks to create'),
+  tasks: z.array(taskSchema).min(1).max(50).describe('Tasks to create'),
 });
 
 export function registerCreateTasks(server: McpServer): void {

@@ -5,7 +5,7 @@ import { entitySchema, runWorkast, toolErrorFrom } from '../run-tool';
 
 const taskSchema = z.object({
   summary: z.string().describe('Task summary (title). Prefer this over description.'),
-  assignedTo: z.array(z.string()).optional()
+  assignedTo: z.array(z.string()).max(50).optional()
     .describe('User IDs to assign (not names or emails). Use workast_list_coworkers to look up IDs.'),
   description: z.string().optional()
     .describe('Longer task details. Only set when extra context is needed beyond the summary.'),
@@ -14,19 +14,20 @@ const taskSchema = z.object({
     .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),
   dueDateTime: z.string().optional()
     .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).max(50).optional()
     .describe('Tag IDs to add (not names). Use IDs from existing tasks or search results.'),
   fields: z
     .array(z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
       value: z.string().describe('Value to set on the field'),
     }))
+    .max(50)
     .optional()
     .describe('Custom field values. Use workast_list_fields to get field IDs.'),
 });
 
 const inputSchema = z.object({
-  tasks: z.array(taskSchema).min(1).describe('Personal tasks to create'),
+  tasks: z.array(taskSchema).min(1).max(50).describe('Personal tasks to create'),
 });
 
 export function registerCreatePersonalTasks(server: McpServer): void {

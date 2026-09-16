@@ -92,5 +92,25 @@ describe('MCP auth', () => {
 
       expect(response.status).toBe(200);
     });
+
+    it('pins WWW-Authenticate resource_metadata to MCP_PUBLIC_ORIGIN', async () => {
+      vi.stubEnv('MCP_PUBLIC_ORIGIN', 'https://mcp.workast.com');
+      handler = createHandler();
+
+      const base = mcpRequest('ping', {}, { apiKey: null });
+      const request = new Request(base, {
+        headers: {
+          ...Object.fromEntries(base.headers),
+          'X-Forwarded-Host': 'evil.com',
+        },
+      });
+      const response = await handler(request);
+
+      expect(response.status).toBe(401);
+      const challenge = wwwAuthenticate(response);
+      const metadataUrl = challenge?.match(/resource_metadata="([^"]+)"/)?.[1];
+      expect(metadataUrl).toBe('https://mcp.workast.com/.well-known/oauth-protected-resource');
+      expect(challenge).not.toContain('evil.com');
+    });
   });
 });

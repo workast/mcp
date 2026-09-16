@@ -4,6 +4,15 @@ import {
   protectedResourceHandler,
 } from 'mcp-handler';
 
+/** Scheme+host, no path. */
+export function getMcpPublicOrigin(req?: Request): string | undefined {
+  const pinned = process.env.MCP_PUBLIC_ORIGIN?.trim().replace(/\/$/, '');
+  if (pinned) {
+    return pinned;
+  }
+  return req ? getPublicOrigin(req) : undefined;
+}
+
 export function getProtectedResourceHandlers() {
   const authMode = process.env.MCP_AUTH_MODE ?? 'agent';
   const authUrl = process.env.WORKAST_AUTH_URL;
@@ -19,7 +28,7 @@ export function getProtectedResourceHandlers() {
     GET: (req: Request) =>
       protectedResourceHandler({
         authServerUrls: [new URL(authUrl).origin],
-        resourceUrl: `${getPublicOrigin(req)}/mcp`,
+        resourceUrl: `${getMcpPublicOrigin(req)}/mcp`,
       })(req),
     OPTIONS: corsHandler,
   };

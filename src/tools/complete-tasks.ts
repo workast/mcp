@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 
 const inputSchema = z.object({
-  taskIds: z.array(z.string()).min(1).describe('Task IDs to complete'),
+  taskIds: z.array(z.string()).min(1).max(50).describe('Task IDs to complete'),
 });
 
 export function registerCompleteTasks(server: McpServer): void {

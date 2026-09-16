@@ -6,7 +6,7 @@ import { runWorkast } from '../run-tool';
 const inputSchema = z.object({
   startDateAfter: z.string().describe('Meetings starting on or after this ISO date (timeMin)'),
   startDateBefore: z.string().describe('Meetings starting on or before this ISO date (timeMax)'),
-  participants: z.array(z.string()).optional()
+  participants: z.array(z.string()).max(50).optional()
     .describe('Filter by attendee user IDs'),
   limit: z.number().int().min(1).max(200).default(50)
     .describe('Maximum number of meetings to return (1–200)'),

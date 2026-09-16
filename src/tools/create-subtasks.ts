@@ -5,7 +5,7 @@ import { entitySchema, runWorkast, toolErrorFrom } from '../run-tool';
 
 const subtaskSchema = z.object({
   summary: z.string().describe('Subtask summary (title). Prefer this over description.'),
-  assignedTo: z.array(z.string()).optional()
+  assignedTo: z.array(z.string()).max(50).optional()
     .describe('User IDs to assign (not names or emails). Use workast_list_coworkers or workast_list_space_participants to look up IDs.'),
   description: z.string().optional()
     .describe('Longer subtask details. Only set when extra context is needed beyond the summary.'),
@@ -14,20 +14,21 @@ const subtaskSchema = z.object({
     .describe('Due date as YYYY-MM-DD. Without dueDateTime the subtask is due on that date with no time. The current user timezone is used automatically.'),
   dueDateTime: z.string().optional()
     .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the subtask has a due time and the assignee is reminded before it is due.'),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).max(50).optional()
     .describe('Tag IDs to add (not names). Use IDs from existing tasks or search results.'),
   fields: z
     .array(z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
       value: z.string().describe('Value to set on the field'),
     }))
+    .max(50)
     .optional()
     .describe('Custom field values. Use workast_list_fields to get field IDs.'),
 });
 
 const inputSchema = z.object({
   parentTaskId: z.string().describe('Parent task ID'),
-  subtasks: z.array(subtaskSchema).min(1).describe('Subtasks to create'),
+  subtasks: z.array(subtaskSchema).min(1).max(50).describe('Subtasks to create'),
 });
 
 export function registerCreateSubtasks(server: McpServer): void {

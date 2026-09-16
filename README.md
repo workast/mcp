@@ -18,6 +18,7 @@ A workspace-scoped API key locks tools to that workspace. Create a key in Workas
 | Variable | Values | Default |
 | --- | --- | --- |
 | `MCP_AUTH_MODE` | `agent` \| `user` | `agent` |
+| `MCP_PUBLIC_ORIGIN` | Public origin, no path (e.g. `https://mcp.workast.com`) | unset (request origin). Optional; required in production user-mode (and agent-mode for a stable challenge URL) |
 | `WORKAST_AUTH_URL` | Issuer URL of workast-auth (same string as auth `AUTH_URL` / well-known `issuer`, e.g. `https://my.workast.com`) | required when mode is `user` |
 | `WORKAST_API_URL` | Workast API origin passed to the SDK as `baseUrl` (for example `http://localhost:8080`) | SDK default (`https://api.workast.com`) |
 | `CUSTOMERIO_WRITE_KEY` | Customer.io CDP write key | unset (analytics no-op) |
@@ -48,7 +49,7 @@ Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workas
 | Tool | Description |
 | --- | --- |
 | `workast_ping` | Health check (requires auth) |
-| `workast_list_spaces` | List spaces (`type`, `participants`, `limit`, `skip`) |
+| `workast_list_spaces` | List spaces (optional `type`, `participants`, `limit`, `skip`) |
 | `workast_create_space` | Create a space (`name`, optional `participants`, `privacy`) |
 | `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
 | `workast_list_space_participants` | List space participants (`spaceId`) |
@@ -64,14 +65,14 @@ Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workas
 | `workast_complete_tasks` | Mark tasks done (`taskIds[]`) |
 | `workast_create_comment` | Comment on a task (`taskId`, `comment`) |
 | `workast_list_task_activity` | Task activity (`taskId`, `limit`, `skip`) |
-| `workast_list_meetings` | List meetings (`startDateAfter`, `startDateBefore`, `participants`, `limit`, `pageToken`) |
+| `workast_list_meetings` | List meetings (`startDateAfter`, `startDateBefore`, optional `participants`, `limit`, `pageToken`) |
 | `workast_retrieve_meeting` | Get a meeting (`meetingId`, optional `includeTranscript`) |
 | `workast_list_fields` | List custom fields (optional `spaceId`) |
-| `workast_create_field` | Create a field and enable it on a space |
+| `workast_create_field` | Create a field and enable it on a space (`spaceId`, `name`, `type`, optional `options`) |
 | `workast_list_reports` | List saved reports (optional `home`, `limit`, `skip`) |
-| `workast_retrieve_report` | Get a report and its tasks (`reportId`, optional `getTasks`) |
+| `workast_retrieve_report` | Get a report and its tasks (`reportId`, `getTasks` default 25) |
 
-List and search tools accept page size and offset (`limit`/`skip`, or `limit`/`offset` for coworkers). Meetings use `limit` (sent as `maxResults`) and an optional `pageToken`. Responses include `has_more` and the next page cursor (`next_skip`, `next_offset`, or `nextPageToken`) so clients can keep paging.
+Paginated list and search tools accept page size and offset (`limit`/`skip`, or `limit`/`offset` for coworkers). Meetings use `limit` (sent as `maxResults`) and an optional `pageToken`. Those responses include `has_more` and the next page cursor (`next_skip`, `next_offset`, or `nextPageToken`) so clients can keep paging.
 
 ## Local development
 

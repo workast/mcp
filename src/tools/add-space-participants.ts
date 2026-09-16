@@ -4,7 +4,7 @@ import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   spaceId: z.string().describe('Space ID'),
-  users: z.array(z.string()).describe('User IDs to add as participants'),
+  users: z.array(z.string()).min(1).max(50).describe('User IDs to add as participants'),
 });
 
 export function registerAddSpaceParticipants(server: McpServer): void {

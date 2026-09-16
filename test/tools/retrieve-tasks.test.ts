@@ -71,6 +71,24 @@ describe('workast_retrieve_tasks tool', () => {
     }]);
   });
 
+  it('rejects 26 taskIds plus 25 shortIds as more than 50 ids total', async () => {
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_retrieve_tasks', {
+      taskIds: Array.from({ length: 26 }, (_, i) => `${task.id}-${i}`),
+      shortIds: Array.from({ length: 25 }, (_, i) => `${task.shortId}-${i}`),
+    });
+
+    expect(status).toBe(200);
+    expectToolError(message, {
+      param: 'taskIds',
+      message: 'At most 50 ids total across taskIds and shortIds',
+    });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+    ]);
+  });
+
   it('returns an error when neither taskIds nor shortIds is provided', async () => {
     const POST = createHandler();
 

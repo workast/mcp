@@ -12,7 +12,7 @@ export function registerListFields(server: McpServer): void {
     'workast_list_fields',
     {
       title: 'List Fields',
-      description: 'List custom fields. Optionally filter to a space. Use this tool to get the field ID of a custom field to set on a task',
+      description: 'List custom fields. Optionally filter to a space. Use this tool to get the field ID of a custom field to set on a task.',
       inputSchema,
       outputSchema: z.object({ fields: z.array(entitySchema) }),
       annotations: {

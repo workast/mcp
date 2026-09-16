@@ -11,8 +11,8 @@ import {
 } from '../run-tool';
 
 const inputSchema = z.object({
-  taskIds: z.array(z.string()).optional().describe('Task IDs to retrieve'),
-  shortIds: z.array(z.string()).optional().describe('Task short IDs to retrieve (e.g. TQ7ZK)'),
+  taskIds: z.array(z.string()).max(50).optional().describe('Task IDs to retrieve'),
+  shortIds: z.array(z.string()).max(50).optional().describe('Task short IDs to retrieve (e.g. TQ7ZK)'),
 });
 
 export function registerRetrieveTasks(server: McpServer): void {
@@ -40,6 +40,13 @@ export function registerRetrieveTasks(server: McpServer): void {
           param: 'taskIds',
           message: 'Provide taskIds or shortIds',
           suggestion: 'Provide at least one task ID or short ID.',
+        }]);
+      }
+      if (taskIds.length + shortIds.length > 50) {
+        throw new ToolError([{
+          param: 'taskIds',
+          message: 'At most 50 ids total across taskIds and shortIds',
+          suggestion: 'Send at most 50 ids total.',
         }]);
       }
       const tasks: Task[] = [];

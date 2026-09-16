@@ -5,7 +5,7 @@ import { entitySchema, runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   name: z.string().describe('Space name'),
-  participants: z.array(z.string()).optional()
+  participants: z.array(z.string()).max(50).optional()
     .describe('User IDs to add as participants'),
   privacy: z.enum(['private', 'team']).optional()
     .describe('Space privacy determines if anyone can view and join the space (team) or if it is only visible to the participants (private). Defaults to team.'),

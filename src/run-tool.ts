@@ -130,7 +130,7 @@ export async function runWorkast(
       suggestion: 'Send Authorization: Bearer <Workast API key or WAT>.',
     }]);
     const duration_ms = Date.now() - started;
-    logger.info({
+    logger.warn({
       tool,
       success: false,
       duration_ms,
@@ -199,7 +199,7 @@ export async function runWorkast(
     if (failed) {
       const duration_ms = Date.now() - started;
       const error_type = failed.errorType;
-      logger.info({
+      logger.warn({
         tool,
         success: false,
         duration_ms,

@@ -1,5 +1,6 @@
 import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import { z } from 'zod';
+import { getMcpPublicOrigin } from './auth/protected-resource';
 import { verifyApiKey } from './auth/verify-api-key';
 import { registerAboutMe } from './tools/about-me';
 import { registerAddSpaceParticipants } from './tools/add-space-participants';
@@ -37,7 +38,7 @@ export function createHandler() {
       'workast_ping',
       {
         title: 'Ping',
-        description: 'Health check. Returns ok.',
+        description: 'Health check. Requires Bearer auth. Returns { ok: true }. Does not call the Workast API.',
         inputSchema: z.object({}),
         outputSchema: z.object({ ok: z.literal(true) }),
         annotations: {
@@ -84,5 +85,6 @@ export function createHandler() {
   return withMcpAuth(handler, verifyApiKey, {
     required: true,
     resourceMetadataPath: '/.well-known/oauth-protected-resource',
+    resourceUrl: getMcpPublicOrigin(),
   });
 }

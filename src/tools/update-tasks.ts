@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 
 const inputSchema = z.object({
-  taskIds: z.array(z.string()).min(1).describe('Task IDs to update'),
+  taskIds: z.array(z.string()).min(1).max(50).describe('Task IDs to update'),
   summary: z.string().optional().describe('Task summary (title). Prefer this over description.'),
   description: z.string().optional()
     .describe('Longer task details. Only set when extra context is needed beyond the summary.'),
@@ -19,6 +19,7 @@ const inputSchema = z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
       value: z.string().describe('Value to set on the field'),
     }))
+    .max(50)
     .optional()
     .describe('Custom field values to upsert. Use workast_list_fields to get field IDs.'),
 });
@@ -35,7 +36,7 @@ export function registerUpdateTasks(server: McpServer): void {
         title: 'Update Tasks',
         openWorldHint: false,
         readOnlyHint: false,
-        destructiveHint: true,
+        destructiveHint: false,
         idempotentHint: true,
       },
     },

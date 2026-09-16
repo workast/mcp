@@ -6,7 +6,7 @@ import { entitySchema, runWorkast } from '../run-tool';
 const inputSchema = z.object({
   type: z.enum(['direct', 'group', 'personal', 'template']).optional()
     .describe('Filter by space type'),
-  participants: z.array(z.string()).optional()
+  participants: z.array(z.string()).max(50).optional()
     .describe('Filter by participant user IDs'),
   limit: z.number().int().min(1).max(200).default(50)
     .describe('Maximum number of spaces to return (1–200)'),

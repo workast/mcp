@@ -4,8 +4,8 @@ import { getProtectedResourceHandlers } from '../src/auth/protected-resource';
 const AUTH_URL = 'https://my.workast.com';
 const WELL_KNOWN = 'http://localhost:3000/.well-known/oauth-protected-resource';
 
-function wellKnownRequest(method: string): Request {
-  return new Request(WELL_KNOWN, { method });
+function wellKnownRequest(method: string, headers?: HeadersInit): Request {
+  return new Request(WELL_KNOWN, { method, headers });
 }
 
 describe('oauth protected resource metadata', () => {
@@ -32,6 +32,19 @@ describe('oauth protected resource metadata', () => {
       expect(typeof body.resource).toBe('string');
       expect(body.resource.length).toBeGreaterThan(0);
       expect(new URL(body.resource).origin.length).toBeGreaterThan(0);
+    });
+
+    it('pins resource to MCP_PUBLIC_ORIGIN when X-Forwarded-Host is spoofed', async () => {
+      vi.stubEnv('MCP_PUBLIC_ORIGIN', 'https://mcp.workast.com');
+      const { GET } = getProtectedResourceHandlers();
+      const response = await GET(wellKnownRequest('GET', {
+        'X-Forwarded-Host': 'evil.com',
+      }));
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.resource).toBe('https://mcp.workast.com/mcp');
+      expect(body.authorization_servers).toEqual([AUTH_URL]);
     });
 
     it('returns CORS * on OPTIONS', async () => {

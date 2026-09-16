@@ -10,7 +10,7 @@ const inputSchema = z.object({
   options: z.array(z.object({
     name: z.string().describe('Option label'),
     color: z.string().optional().describe('Option color'),
-  })).optional().describe('Options. Required when type is options'),
+  })).max(50).optional().describe('Options. Required when type is options'),
 });
 
 export function registerCreateField(server: McpServer): void {
