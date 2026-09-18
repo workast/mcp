@@ -8,6 +8,44 @@ import {
 } from '../helpers';
 
 const { meeting, meetingDetail, meetingRecordingResource } = examples;
+const meetingDetailCard = {
+  id: meetingDetail.id,
+  createdAt: meetingDetail.createdAt,
+  updatedAt: meetingDetail.updatedAt,
+  summary: meetingDetail.summary,
+  status: meetingDetail.status,
+  eventId: meetingDetail.eventId,
+  isRecurrent: meetingDetail.isRecurrent,
+  organizer: {
+    id: meetingDetail.organizer.id,
+    name: meetingDetail.organizer.name,
+  },
+  totalAttendees: meetingDetail.totalAttendees,
+  someAttendees: [
+    {
+      id: meetingDetail.someAttendees[0].id,
+      name: meetingDetail.someAttendees[0].name,
+    },
+  ],
+  list: {
+    id: meetingDetail.list.id,
+    name: meetingDetail.list.name,
+    type: meetingDetail.list.type,
+    status: meetingDetail.list.status,
+    privacy: meetingDetail.list.privacy,
+    link: meetingDetail.list.link,
+  },
+  link: meetingDetail.link,
+  conferenceData: {
+    joinUrl: meetingDetail.conferenceData.joinUrl,
+    provider: meetingDetail.conferenceData.provider,
+  },
+  notetaker: { enabled: meetingDetail.notetaker.enabled },
+  start: meetingDetail.start,
+  end: meetingDetail.end,
+  allDay: meetingDetail.allDay,
+  completedTasks: meetingDetail.completedTasks,
+};
 
 describe('workast_retrieve_meeting tool', () => {
   const mock = setupWorkastMock();
@@ -21,7 +59,7 @@ describe('workast_retrieve_meeting tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, meetingDetail);
+    expectToolData(message, meetingDetailCard);
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -41,7 +79,22 @@ describe('workast_retrieve_meeting tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ...meetingDetail, recording: meetingRecordingResource });
+    expectToolData(message, {
+      ...meetingDetailCard,
+      recording: {
+        transcript: {
+          object: meetingRecordingResource.transcript.object,
+          type: meetingRecordingResource.transcript.type,
+          language: meetingRecordingResource.transcript.language,
+          transcript: [{
+            speaker: meetingRecordingResource.transcript.transcript[0].speaker,
+            start: meetingRecordingResource.transcript.transcript[0].start,
+            end: meetingRecordingResource.transcript.transcript[0].end,
+            text: meetingRecordingResource.transcript.transcript[0].text,
+          }],
+        },
+      },
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'meetings.retrieve', args: [meeting.id] },

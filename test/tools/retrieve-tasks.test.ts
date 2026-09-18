@@ -13,6 +13,63 @@ import {
 
 const { task, user } = examples;
 const secondShortId = task.subTasks![0].shortId;
+const subTask = task.subTasks![0];
+
+const retrieveTaskCard = {
+  id: task.id,
+  createdAt: task.createdAt,
+  createdBy: { id: task.createdBy.id, name: task.createdBy.name },
+  shortId: task.shortId,
+  summary: 'Ship v3',
+  assignedTo: [{ id: task.assignedTo[0].id, name: task.assignedTo[0].name }],
+  subscribers: [
+    { id: task.subscribers[0].id, name: task.subscribers[0].name },
+    { id: task.subscribers[1].id, name: task.subscribers[1].name },
+  ],
+  status: task.status,
+  allDay: task.allDay,
+  priority: task.priority,
+  description: task.description,
+  list: { id: task.list.id, name: task.list.name },
+  subList: { id: task.subList.id, name: task.subList.name },
+  subTasks: [{
+    status: subTask.status,
+    summary: 'Ship v3',
+    shortId: subTask.shortId,
+    createdAt: subTask.createdAt,
+    updatedAt: subTask.updatedAt,
+    link: subTask.link,
+    id: subTask.id,
+    list: { id: subTask.list.id, name: subTask.list.name },
+    assignedTo: [],
+    allDay: subTask.allDay,
+    createdBy: { id: subTask.createdBy.id, name: subTask.createdBy.name },
+    hasDescription: subTask.hasDescription,
+    numberOfComments: subTask.numberOfComments,
+    numberOfAttachments: subTask.numberOfAttachments,
+    subTasks: [],
+    isSubscribed: subTask.isSubscribed,
+    fields: [],
+  }],
+  attachments: [],
+  totalSubTasks: task.totalSubTasks,
+  completedSubTasks: task.completedSubTasks,
+  numberOfComments: task.numberOfComments,
+  lastComment: {
+    id: task.lastComment.id,
+    type: 'comment',
+    createdAt: task.lastComment.createdAt,
+    text: 'Ship v3',
+  },
+  link: task.link,
+  dependencies: [],
+  milestones: [],
+  fields: [{
+    id: task.fields[0].id,
+    name: task.fields[0].name,
+    value: '',
+  }],
+};
 
 describe('workast_retrieve_tasks tool', () => {
   const mock = setupWorkastMock();
@@ -26,7 +83,7 @@ describe('workast_retrieve_tasks tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { tasks: [task] });
+    expectToolData(message, { tasks: [retrieveTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -45,7 +102,7 @@ describe('workast_retrieve_tasks tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { tasks: [task, task] });
+    expectToolData(message, { tasks: [retrieveTaskCard, retrieveTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.retrieve', args: [task.id] },
@@ -62,7 +119,7 @@ describe('workast_retrieve_tasks tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { tasks: [task] });
+    expectToolData(message, { tasks: [retrieveTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -115,7 +172,7 @@ describe('workast_retrieve_tasks tool', () => {
 
     expect(status).toBe(200);
     expectToolPartialData(message, {
-      tasks: [task],
+      tasks: [retrieveTaskCard],
       errors: [{
         param: 'taskIds[1]',
         message: /Not found/,
@@ -140,7 +197,7 @@ describe('workast_retrieve_tasks tool', () => {
 
     expect(status).toBe(200);
     expectToolPartialData(message, {
-      tasks: [task],
+      tasks: [retrieveTaskCard],
       errors: [{
         param: 'shortIds[1]',
         message: /Not found/,
@@ -165,7 +222,7 @@ describe('workast_retrieve_tasks tool', () => {
 
     expect(status).toBe(200);
     expectToolPartialData(message, {
-      tasks: [task],
+      tasks: [retrieveTaskCard],
       errors: [{
         param: 'taskIds[1]',
         message: /Forbidden/,
@@ -250,7 +307,7 @@ describe('workast_retrieve_tasks tool', () => {
 
     expect(status).toBe(200);
     expectToolPartialData(message, {
-      tasks: [task],
+      tasks: [retrieveTaskCard],
       errors: [{
         param: 'taskIds[1]',
         message: /Unauthorized/,
@@ -275,7 +332,7 @@ describe('workast_retrieve_tasks tool', () => {
 
     expect(status).toBe(200);
     expectToolPartialData(message, {
-      tasks: [task],
+      tasks: [retrieveTaskCard],
       errors: [{
         param: 'taskIds[1]',
         message: 'Request timed out after 30000ms',
@@ -302,7 +359,7 @@ describe('workast_retrieve_tasks tool', () => {
 
     expect(status).toBe(200);
     expectToolPartialData(message, {
-      tasks: [task],
+      tasks: [retrieveTaskCard],
       errors: [{
         param: 'shortIds[0]',
         message: /Not found/,

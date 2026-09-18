@@ -1,7 +1,8 @@
-import type { UserDetail, UserSearchQuery } from '@workast/sdk';
+import type { UserSearchQuery } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast } from '../run-tool';
+import { coworkerCardSchema, projectCoworker } from '../project';
+import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   limit: z.number().int().min(1).max(200).default(50)
@@ -18,7 +19,7 @@ export function registerListCoworkers(server: McpServer): void {
       description: 'Find all users in the current Workast team. Use this tool to get the user ID of a coworker to assign tasks to them.',
       inputSchema,
       outputSchema: z.object({
-        users: z.array(entitySchema),
+        users: z.array(coworkerCardSchema),
         count: z.number(),
         offset: z.number(),
         has_more: z.boolean(),
@@ -35,7 +36,7 @@ export function registerListCoworkers(server: McpServer): void {
         limit: args.limit,
         offset: args.offset,
       };
-      const users: UserDetail[] = await workast.users.list(query);
+      const users = (await workast.users.list(query)).map(projectCoworker);
       const count = users.length;
       const has_more = count === args.limit;
       return {

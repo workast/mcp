@@ -8,6 +8,12 @@ import {
 } from '../helpers';
 
 const { task, taskActivities } = examples;
+const activityCards = [{
+  id: taskActivities.activities[0].id,
+  type: taskActivities.activities[0].type,
+  createdAt: taskActivities.activities[0].createdAt,
+  text: 'Ada Lovelace created the task Ship v3',
+}];
 
 describe('workast_list_task_activity tool', () => {
   const mock = setupWorkastMock();
@@ -23,7 +29,7 @@ describe('workast_list_task_activity tool', () => {
     expect(status).toBe(200);
     expectToolData(message, {
       total: taskActivities.total,
-      activities: taskActivities.activities,
+      activities: activityCards,
       count: taskActivities.activities.length,
       skip: 0,
       has_more: true,
@@ -56,7 +62,7 @@ describe('workast_list_task_activity tool', () => {
     }]);
     expectToolData(message, {
       total: taskActivities.total,
-      activities: taskActivities.activities,
+      activities: activityCards,
       count: taskActivities.activities.length,
       skip: 20,
       has_more: false,
@@ -81,7 +87,7 @@ describe('workast_list_task_activity tool', () => {
     }]);
     expectToolData(message, {
       total: taskActivities.total,
-      activities: taskActivities.activities,
+      activities: activityCards,
       count: taskActivities.activities.length,
       skip: 0,
       has_more: true,
@@ -106,7 +112,7 @@ describe('workast_list_task_activity tool', () => {
     expect(status).toBe(200);
     expectToolData(message, {
       total: page.total,
-      activities: page.activities,
+      activities: activityCards,
       count: page.activities.length,
       skip: 0,
       has_more: true,

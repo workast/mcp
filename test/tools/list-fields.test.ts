@@ -19,7 +19,36 @@ describe('workast_list_fields tool', () => {
     const { status, message } = await callTool(POST, 'workast_list_fields', {});
 
     expect(status).toBe(200);
-    expectToolData(message, { fields: [customField] });
+    expectToolData(message, {
+      fields: [{
+        id: customField.id,
+        name: customField.name,
+        description: customField.description,
+        type: customField.type,
+        options: [
+          {
+            id: customField.options[0].id,
+            name: customField.options[0].name,
+            color: customField.options[0].color,
+          },
+          {
+            id: customField.options[1].id,
+            name: customField.options[1].name,
+            color: customField.options[1].color,
+          },
+          {
+            id: customField.options[2].id,
+            name: customField.options[2].name,
+            color: customField.options[2].color,
+          },
+          {
+            id: customField.options[3].id,
+            name: customField.options[3].name,
+            color: customField.options[3].color,
+          },
+        ],
+      }],
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'fields.list', args: [] }]);
@@ -34,7 +63,36 @@ describe('workast_list_fields tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { fields: [customField] });
+    expectToolData(message, {
+      fields: [{
+        id: customField.id,
+        name: customField.name,
+        description: customField.description,
+        type: customField.type,
+        options: [
+          {
+            id: customField.options[0].id,
+            name: customField.options[0].name,
+            color: customField.options[0].color,
+          },
+          {
+            id: customField.options[1].id,
+            name: customField.options[1].name,
+            color: customField.options[1].color,
+          },
+          {
+            id: customField.options[2].id,
+            name: customField.options[2].name,
+            color: customField.options[2].color,
+          },
+          {
+            id: customField.options[3].id,
+            name: customField.options[3].name,
+            color: customField.options[3].color,
+          },
+        ],
+      }],
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {

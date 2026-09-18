@@ -36,7 +36,6 @@ export class ToolError extends Error {
   }
 }
 
-export const entitySchema = z.looseObject({});
 export const errorEntrySchema = z.object({
   param: z.string().optional(),
   message: z.string(),

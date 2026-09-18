@@ -8,6 +8,13 @@ import {
 } from '../helpers';
 
 const { searches } = examples;
+const reportCard = {
+  id: searches.searches[0].id,
+  name: searches.searches[0].name,
+  custom: searches.searches[0].custom,
+  link: searches.searches[0].link,
+  createdBy: searches.searches[0].createdBy,
+};
 
 describe('workast_list_reports tool', () => {
   const mock = setupWorkastMock();
@@ -20,7 +27,7 @@ describe('workast_list_reports tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 0,
@@ -43,7 +50,7 @@ describe('workast_list_reports tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 0,
@@ -75,7 +82,7 @@ describe('workast_list_reports tool', () => {
       args: [{ limit: 10, skip: 20 }],
     }]);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 20,
@@ -102,7 +109,7 @@ describe('workast_list_reports tool', () => {
       args: [{ limit: 10, skip: 0 }],
     }]);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 0,
@@ -126,7 +133,7 @@ describe('workast_list_reports tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      searches: page.searches,
+      searches: [reportCard],
       total: page.total,
       count: page.searches.length,
       skip: 0,

@@ -1,7 +1,8 @@
-import type { Task, TaskCreate } from '@workast/sdk';
+import type { TaskCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast, toolErrorFrom } from '../run-tool';
+import { projectSearchTask, searchTaskCardSchema } from '../project';
+import { runWorkast, toolErrorFrom } from '../run-tool';
 
 const taskSchema = z.object({
   summary: z.string().describe('Task summary (title). Prefer this over description.'),
@@ -37,7 +38,7 @@ export function registerCreatePersonalTasks(server: McpServer): void {
       title: 'Create Personal Tasks',
       description: 'Create one or more tasks in the current user personal list. No spaceId is required.',
       inputSchema,
-      outputSchema: z.object({ tasks: z.array(entitySchema) }),
+      outputSchema: z.object({ tasks: z.array(searchTaskCardSchema) }),
       annotations: {
         title: 'Create Personal Tasks',
         openWorldHint: false,
@@ -47,10 +48,12 @@ export function registerCreatePersonalTasks(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_personal_tasks', async (workast) => {
-      const created: Task[] = [];
+      const created: ReturnType<typeof projectSearchTask>[] = [];
       for (const [i, { summary, ...rest }] of args.tasks.entries()) {
         try {
-          created.push(await workast.tasks.createPersonal({ text: summary, ...rest } as TaskCreate));
+          created.push(projectSearchTask(
+            await workast.tasks.createPersonal({ text: summary, ...rest } as TaskCreate),
+          ));
         } catch (error) {
           if (created.length > 0) {
             toolErrorFrom(error, `tasks[${i}]`, { tasks: created });

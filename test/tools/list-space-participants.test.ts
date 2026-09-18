@@ -21,7 +21,9 @@ describe('workast_list_space_participants tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { participants: [user] });
+    expectToolData(message, {
+      participants: [{ id: user.id, name: user.name }],
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {

@@ -1,7 +1,8 @@
 import type { SearchDetail } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast } from '../run-tool';
+import { projectReport, reportCardSchema } from '../project';
+import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   reportId: z.string().describe('Report ID'),
@@ -16,7 +17,7 @@ export function registerRetrieveReport(server: McpServer): void {
       title: 'Retrieve Report',
       description: 'Retrieve a saved report by ID, including the report\'s tasks.',
       inputSchema,
-      outputSchema: entitySchema,
+      outputSchema: reportCardSchema,
       annotations: {
         title: 'Retrieve Report',
         openWorldHint: false,
@@ -28,7 +29,7 @@ export function registerRetrieveReport(server: McpServer): void {
         args.reportId,
         { getTasks: args.getTasks },
       );
-      return report;
+      return projectReport(report);
     }),
   );
 }

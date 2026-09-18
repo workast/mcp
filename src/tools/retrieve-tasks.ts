@@ -1,8 +1,8 @@
-import { ApiError, TimeoutError, type Task } from '@workast/sdk';
+import { ApiError, TimeoutError } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { projectRetrieveTask, retrieveTaskCardSchema } from '../project';
 import {
-  entitySchema,
   errorEntrySchema,
   runWorkast,
   ToolError,
@@ -23,7 +23,7 @@ export function registerRetrieveTasks(server: McpServer): void {
       description: 'Retrieve one or more tasks by ID or short ID.',
       inputSchema,
       outputSchema: z.object({
-        tasks: z.array(entitySchema),
+        tasks: z.array(retrieveTaskCardSchema),
         errors: z.array(errorEntrySchema).optional(),
       }),
       annotations: {
@@ -49,7 +49,7 @@ export function registerRetrieveTasks(server: McpServer): void {
           suggestion: 'Send at most 50 ids total.',
         }]);
       }
-      const tasks: Task[] = [];
+      const tasks: ReturnType<typeof projectRetrieveTask>[] = [];
       const errors: ToolErrorEntry[] = [];
       const lookups = [
         ...taskIds.map((id, i) => ({
@@ -64,7 +64,7 @@ export function registerRetrieveTasks(server: McpServer): void {
 
       for (const { param, retrieve } of lookups) {
         try {
-          tasks.push(await retrieve());
+          tasks.push(projectRetrieveTask(await retrieve()));
         } catch (error) {
           if (error instanceof ApiError && (error.status === 404 || error.status === 403)) {
             errors.push(toolErrorEntry(error, param));

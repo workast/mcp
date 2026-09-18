@@ -1,7 +1,8 @@
 import type { CustomField, CustomFieldCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast, ToolError, toolErrorFrom } from '../run-tool';
+import { createdFieldCardSchema, projectCreatedField } from '../project';
+import { runWorkast, ToolError, toolErrorFrom } from '../run-tool';
 
 const inputSchema = z.object({
   spaceId: z.string().describe('Space ID to enable the field on'),
@@ -20,7 +21,7 @@ export function registerCreateField(server: McpServer): void {
       title: 'Create Field',
       description: 'Create a custom field and enable it on a space.',
       inputSchema,
-      outputSchema: entitySchema,
+      outputSchema: createdFieldCardSchema,
       annotations: {
         title: 'Create Field',
         openWorldHint: false,
@@ -48,7 +49,7 @@ export function registerCreateField(server: McpServer): void {
       } catch (error) {
         toolErrorFrom(error, 'spaceId', { createdField: { id: field.id } });
       }
-      return field;
+      return projectCreatedField(field);
     }),
   );
 }

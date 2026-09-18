@@ -30,7 +30,17 @@ describe('workast_create_field tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, customField);
+    expectToolData(message, {
+      id: customField.id,
+      name: customField.name,
+      type: customField.type,
+      options: [
+        { id: customField.options[0].id, name: customField.options[0].name },
+        { id: customField.options[1].id, name: customField.options[1].name },
+        { id: customField.options[2].id, name: customField.options[2].name },
+        { id: customField.options[3].id, name: customField.options[3].name },
+      ],
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'fields.create', args: [createBody] },

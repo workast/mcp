@@ -1,6 +1,7 @@
 import type { Meetings, MeetingSearchQuery } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { meetingListItemCardSchema, projectMeetingListItem } from '../project';
 import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
@@ -21,7 +22,10 @@ export function registerListMeetings(server: McpServer): void {
       title: 'List Meetings',
       description: 'List meetings in a time range. Optionally filter by participants.',
       inputSchema,
-      outputSchema: z.looseObject({ has_more: z.boolean() }),
+      outputSchema: z.looseObject({
+        meetings: z.array(meetingListItemCardSchema),
+        has_more: z.boolean(),
+      }),
       annotations: {
         title: 'List Meetings',
         openWorldHint: false,
@@ -43,6 +47,7 @@ export function registerListMeetings(server: McpServer): void {
       const result: Meetings = await workast.meetings.list(query);
       return {
         ...result,
+        meetings: (result.meetings ?? []).map(projectMeetingListItem),
         has_more: result.nextPageToken !== null,
       };
     }),

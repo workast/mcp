@@ -1,9 +1,11 @@
 import type { TaskActivities, TaskActivitySearchQuery } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { activityCardSchema, projectActivity } from '../project';
 import { runWorkast } from '../run-tool';
 
 const outputSchema = z.looseObject({
+  activities: z.array(activityCardSchema),
   count: z.number(),
   skip: z.number(),
   has_more: z.boolean(),
@@ -42,6 +44,7 @@ export function registerListTaskActivity(server: McpServer): void {
       const has_more = args.skip + count < result.total;
       return {
         ...result,
+        activities: result.activities.map(projectActivity),
         count,
         skip: args.skip,
         has_more,

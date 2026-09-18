@@ -24,7 +24,12 @@ describe('workast_create_comment tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, commentActivity);
+    expectToolData(message, {
+      id: commentActivity.id,
+      type: 'comment',
+      createdAt: commentActivity.createdAt,
+      text: 'Standup',
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {

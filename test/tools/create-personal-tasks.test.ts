@@ -10,6 +10,29 @@ import {
 
 const { customField, tag, task, user } = examples;
 
+const createdTaskCard = {
+  id: task.id,
+  status: task.status,
+  summary: 'Ship v3',
+  shortId: task.shortId,
+  createdAt: task.createdAt,
+  link: task.link,
+  list: { id: task.list.id, name: task.list.name },
+  subList: { id: task.subList.id, name: task.subList.name },
+  assignedTo: [{ id: task.assignedTo[0].id, name: task.assignedTo[0].name }],
+  allDay: task.allDay,
+  createdBy: { id: task.createdBy.id, name: task.createdBy.name },
+  numberOfComments: task.numberOfComments,
+  totalSubTasks: task.totalSubTasks,
+  completedSubTasks: task.completedSubTasks,
+  milestones: [],
+  fields: [{
+    id: task.fields[0].id,
+    name: task.fields[0].name,
+    value: '',
+  }],
+};
+
 const optionalTaskInput = {
   summary: task.text,
   assignedTo: [user.id],
@@ -44,7 +67,7 @@ describe('workast_create_personal_tasks tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { tasks: [task] });
+    expectToolData(message, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -62,7 +85,7 @@ describe('workast_create_personal_tasks tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { tasks: [task] });
+    expectToolData(message, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -85,7 +108,7 @@ describe('workast_create_personal_tasks tool', () => {
       param: 'tasks[1]',
       message: /Unauthorized/,
       status: 401,
-    }, { tasks: [task] });
+    }, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.createPersonal', args: [{ text: task.text }] },

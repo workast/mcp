@@ -1,7 +1,8 @@
 import type { List, ListCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast } from '../run-tool';
+import { createdSpaceCardSchema, projectCreatedSpace } from '../project';
+import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   name: z.string().describe('Space name'),
@@ -18,7 +19,7 @@ export function registerCreateSpace(server: McpServer): void {
       title: 'Create Space',
       description: 'Create a Workast space. A space is a collection of tasks that are related to a specific project, topic, department, client. Always check if a relevant space already exists before creating a new one.',
       inputSchema,
-      outputSchema: entitySchema,
+      outputSchema: createdSpaceCardSchema,
       annotations: {
         title: 'Create Space',
         openWorldHint: false,
@@ -34,7 +35,7 @@ export function registerCreateSpace(server: McpServer): void {
         ...(args.privacy != null ? { privacy: args.privacy } : {}),
       } as ListCreate;
       const space: List = await workast.lists.create(body);
-      return space;
+      return projectCreatedSpace(space);
     }),
   );
 }

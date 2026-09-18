@@ -1,7 +1,8 @@
 import type { CommentActivity } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast } from '../run-tool';
+import { commentCardSchema, projectComment } from '../project';
+import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   taskId: z.string().describe('Task ID'),
@@ -15,7 +16,7 @@ export function registerCreateComment(server: McpServer): void {
       title: 'Create Comment',
       description: 'Add a comment to a task.',
       inputSchema,
-      outputSchema: entitySchema,
+      outputSchema: commentCardSchema,
       annotations: {
         title: 'Create Comment',
         openWorldHint: false,
@@ -29,7 +30,7 @@ export function registerCreateComment(server: McpServer): void {
         type: 'comment',
         value: args.comment,
       });
-      return activity;
+      return projectComment(activity);
     }),
   );
 }

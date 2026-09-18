@@ -8,6 +8,31 @@ import {
 } from '../helpers';
 
 const { meetings, task, user } = examples;
+const listedMeeting = meetings.meetings[0];
+const meetingCard = {
+  id: listedMeeting.id,
+  summary: listedMeeting.summary,
+  eventId: listedMeeting.eventId,
+  isRecurrent: listedMeeting.isRecurrent,
+  organizer: {
+    id: listedMeeting.organizer.id,
+    name: listedMeeting.organizer.name,
+  },
+  totalAttendees: listedMeeting.totalAttendees,
+  someAttendees: [
+    { id: listedMeeting.someAttendees[0].id, name: listedMeeting.someAttendees[0].name },
+    { id: listedMeeting.someAttendees[1].id, name: listedMeeting.someAttendees[1].name },
+  ],
+  link: listedMeeting.link,
+  start: listedMeeting.start,
+  end: listedMeeting.end,
+  allDay: listedMeeting.allDay,
+  completedTasks: listedMeeting.completedTasks,
+};
+const meetingsCard = {
+  meetings: [meetingCard],
+  nextPageToken: meetings.nextPageToken,
+};
 
 const timeRange = {
   timeMin: '2026-04-01T00:00:00.000Z',
@@ -28,7 +53,7 @@ describe('workast_list_meetings tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ...meetings, has_more: true });
+    expectToolData(message, { ...meetingsCard, has_more: true });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -53,7 +78,7 @@ describe('workast_list_meetings tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ...meetings, has_more: true });
+    expectToolData(message, { ...meetingsCard, has_more: true });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -81,7 +106,7 @@ describe('workast_list_meetings tool', () => {
       method: 'meetings.list',
       args: [query],
     }]);
-    expectToolData(message, { ...meetings, has_more: true });
+    expectToolData(message, { ...meetingsCard, has_more: true });
   });
 
   it('defaults maxResults to 50', async () => {
@@ -101,7 +126,7 @@ describe('workast_list_meetings tool', () => {
       method: 'meetings.list',
       args: [query],
     }]);
-    expectToolData(message, { ...meetings, has_more: true });
+    expectToolData(message, { ...meetingsCard, has_more: true });
   });
 
   it('sets has_more false when nextPageToken is null', async () => {
@@ -116,6 +141,10 @@ describe('workast_list_meetings tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, { ...page, has_more: false });
+    expectToolData(message, {
+      meetings: [meetingCard],
+      nextPageToken: null,
+      has_more: false,
+    });
   });
 });

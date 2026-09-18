@@ -8,6 +8,29 @@ import {
 } from '../helpers';
 
 const { customField, list, searchResults, subList, tag, task, user } = examples;
+const searchHit = searchResults.tasks[0];
+const searchTaskCard = {
+  status: searchHit.status,
+  summary: 'Ship v3',
+  shortId: searchHit.shortId,
+  createdAt: searchHit.createdAt,
+  updatedAt: searchHit.updatedAt,
+  link: searchHit.link,
+  id: searchHit.id,
+  list: { id: searchHit.list.id, name: searchHit.list.name },
+  subList: { id: searchHit.subList.id, name: searchHit.subList.name },
+  assignedTo: [{ id: searchHit.assignedTo[0].id, name: searchHit.assignedTo[0].name }],
+  allDay: searchHit.allDay,
+  createdBy: { id: searchHit.createdBy.id, name: searchHit.createdBy.name },
+  hasDescription: searchHit.hasDescription,
+  numberOfComments: searchHit.numberOfComments,
+  numberOfAttachments: searchHit.numberOfAttachments,
+  totalSubTasks: searchHit.totalSubTasks,
+  completedSubTasks: searchHit.completedSubTasks,
+  isSubscribed: searchHit.isSubscribed,
+  milestones: searchHit.milestones,
+  fields: [],
+};
 
 function searchPayload(predicates: unknown[], paging: { limit?: number; skip?: number } = {}) {
   return {
@@ -37,7 +60,9 @@ describe('workast_search_tasks tool', () => {
     const count = searchResults.tasks.length;
     const has_more = 0 + count < searchResults.total;
     expectToolData(message, {
-      ...searchResults,
+      tasks: [searchTaskCard],
+      total: searchResults.total,
+      hiddenTasks: searchResults.hiddenTasks,
       count,
       skip: 0,
       has_more,

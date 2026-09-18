@@ -22,7 +22,10 @@ describe('workast_create_sublist tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, subList);
+    expectToolData(message, {
+      id: subList.id,
+      name: subList.name,
+    });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {

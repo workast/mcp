@@ -1,7 +1,8 @@
-import type { SubtaskCreate, Task } from '@workast/sdk';
+import type { SubtaskCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast, toolErrorFrom } from '../run-tool';
+import { projectSearchTask, searchTaskCardSchema } from '../project';
+import { runWorkast, toolErrorFrom } from '../run-tool';
 
 const subtaskSchema = z.object({
   summary: z.string().describe('Subtask summary (title). Prefer this over description.'),
@@ -38,7 +39,7 @@ export function registerCreateSubtasks(server: McpServer): void {
       title: 'Create Subtasks',
       description: 'Create one or more subtasks on a parent task.',
       inputSchema,
-      outputSchema: z.object({ subtasks: z.array(entitySchema) }),
+      outputSchema: z.object({ subtasks: z.array(searchTaskCardSchema) }),
       annotations: {
         title: 'Create Subtasks',
         openWorldHint: false,
@@ -48,12 +49,12 @@ export function registerCreateSubtasks(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_subtasks', async (workast) => {
-      const created: Task[] = [];
+      const created: ReturnType<typeof projectSearchTask>[] = [];
       for (const [i, { summary, ...rest }] of args.subtasks.entries()) {
         try {
-          created.push(
+          created.push(projectSearchTask(
             await workast.tasks.subtasks.create(args.parentTaskId, { text: summary, ...rest } as SubtaskCreate),
-          );
+          ));
         } catch (error) {
           if (created.length > 0) {
             toolErrorFrom(error, `subtasks[${i}]`, { subtasks: created });

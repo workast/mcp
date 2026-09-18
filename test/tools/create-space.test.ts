@@ -8,6 +8,24 @@ import {
 } from '../helpers';
 
 const { list, user } = examples;
+const createdSpaceCard = {
+  id: list.id,
+  name: list.name,
+  numberOfParticipants: list.numberOfParticipants,
+  type: list.type,
+  privacy: list.privacy,
+  isArchived: list.isArchived,
+  createdBy: list.createdBy,
+  participants: list.participants,
+  defaultSubList: list.defaultSubList,
+  subLists: [{ id: list.subLists[0].id, name: list.subLists[0].name }],
+  link: list.link,
+  isParticipant: list.isParticipant,
+  someParticipants: [
+    { id: list.someParticipants[0].id, name: list.someParticipants[0].name },
+    { id: list.someParticipants[1].id, name: list.someParticipants[1].name },
+  ],
+};
 
 describe('workast_create_space tool', () => {
   const mock = setupWorkastMock();
@@ -21,7 +39,7 @@ describe('workast_create_space tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, list);
+    expectToolData(message, createdSpaceCard);
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {
@@ -43,7 +61,7 @@ describe('workast_create_space tool', () => {
     const { status, message } = await callTool(POST, 'workast_create_space', body);
 
     expect(status).toBe(200);
-    expectToolData(message, list);
+    expectToolData(message, createdSpaceCard);
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       {

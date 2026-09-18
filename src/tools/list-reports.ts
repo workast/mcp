@@ -1,9 +1,11 @@
 import type { SearchFindQuery, Searches } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { projectReportListItem, reportListItemCardSchema } from '../project';
 import { runWorkast } from '../run-tool';
 
 const outputSchema = z.looseObject({
+  searches: z.array(reportListItemCardSchema),
   count: z.number(),
   skip: z.number(),
   has_more: z.boolean(),
@@ -46,6 +48,7 @@ export function registerListReports(server: McpServer): void {
         : count === args.limit;
       return {
         ...result,
+        searches: (result.searches ?? []).map(projectReportListItem),
         count,
         skip: args.skip,
         has_more,

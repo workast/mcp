@@ -1,7 +1,8 @@
-import type { List, ListSearchQuery } from '@workast/sdk';
+import type { ListSearchQuery } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { entitySchema, runWorkast } from '../run-tool';
+import { projectSpace, spaceCardSchema } from '../project';
+import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   type: z.enum(['direct', 'group', 'personal', 'template']).optional()
@@ -22,7 +23,7 @@ export function registerListSpaces(server: McpServer): void {
       description: 'List Workast spaces visible to the current user. Use this tool to get the space ID of a space to create a task in.',
       inputSchema,
       outputSchema: z.object({
-        spaces: z.array(entitySchema),
+        spaces: z.array(spaceCardSchema),
         count: z.number(),
         skip: z.number(),
         has_more: z.boolean(),
@@ -46,7 +47,7 @@ export function registerListSpaces(server: McpServer): void {
         query.participants = args.participants;
       }
 
-      const spaces: List[] = await workast.lists.list(query);
+      const spaces = (await workast.lists.list(query)).map(projectSpace);
       const count = spaces.length;
       const has_more = count === args.limit;
       return {

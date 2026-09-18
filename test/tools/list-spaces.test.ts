@@ -8,6 +8,12 @@ import {
 } from '../helpers';
 
 const { listEnumerate, user } = examples;
+const spaceCard = {
+  id: listEnumerate.id,
+  name: listEnumerate.name,
+  type: listEnumerate.type,
+  link: listEnumerate.link,
+};
 
 describe('workast_list_spaces tool', () => {
   const mock = setupWorkastMock();
@@ -20,7 +26,7 @@ describe('workast_list_spaces tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      spaces: [listEnumerate],
+      spaces: [spaceCard],
       count: 1,
       skip: 0,
       has_more: false,
@@ -42,7 +48,7 @@ describe('workast_list_spaces tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      spaces: [listEnumerate],
+      spaces: [spaceCard],
       count: 1,
       skip: 0,
       has_more: false,
@@ -66,7 +72,7 @@ describe('workast_list_spaces tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      spaces: [listEnumerate],
+      spaces: [spaceCard],
       count: 1,
       skip: 0,
       has_more: false,
@@ -96,7 +102,7 @@ describe('workast_list_spaces tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      spaces: [listEnumerate],
+      spaces: [spaceCard],
       count: 1,
       skip: 0,
       has_more: false,
@@ -127,7 +133,7 @@ describe('workast_list_spaces tool', () => {
       args: [{ limit: 10, skip: 20 }],
     }]);
     expectToolData(message, {
-      spaces: [listEnumerate],
+      spaces: [spaceCard],
       count: 1,
       skip: 20,
       has_more: false,
@@ -149,7 +155,7 @@ describe('workast_list_spaces tool', () => {
       args: [{ limit: 50, skip: 0 }],
     }]);
     expectToolData(message, {
-      spaces: [listEnumerate],
+      spaces: [spaceCard],
       count: 1,
       skip: 0,
       has_more: false,
@@ -172,7 +178,10 @@ describe('workast_list_spaces tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      spaces,
+      spaces: [
+        spaceCard,
+        { ...spaceCard, id: `${listEnumerate.id}-2` },
+      ],
       count: 2,
       skip: 0,
       has_more: true,

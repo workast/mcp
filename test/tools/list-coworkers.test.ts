@@ -8,6 +8,12 @@ import {
 } from '../helpers';
 
 const { userDetail } = examples;
+const coworkerCard = {
+  id: userDetail.id,
+  name: userDetail.name,
+  timezone: userDetail.timezone,
+  role: userDetail.role,
+};
 
 describe('workast_list_coworkers tool', () => {
   const mock = setupWorkastMock();
@@ -20,7 +26,7 @@ describe('workast_list_coworkers tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      users: [userDetail],
+      users: [coworkerCard],
       count: 1,
       offset: 0,
       has_more: false,
@@ -51,7 +57,7 @@ describe('workast_list_coworkers tool', () => {
       args: [{ limit: 10, offset: 20 }],
     }]);
     expectToolData(message, {
-      users: [userDetail],
+      users: [coworkerCard],
       count: 1,
       offset: 20,
       has_more: false,
@@ -73,7 +79,7 @@ describe('workast_list_coworkers tool', () => {
       args: [{ limit: 50, offset: 0 }],
     }]);
     expectToolData(message, {
-      users: [userDetail],
+      users: [coworkerCard],
       count: 1,
       offset: 0,
       has_more: false,
@@ -93,7 +99,10 @@ describe('workast_list_coworkers tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      users,
+      users: [
+        coworkerCard,
+        { ...coworkerCard, id: `${userDetail.id}-2` },
+      ],
       count: 2,
       offset: 0,
       has_more: true,
