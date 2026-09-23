@@ -136,7 +136,7 @@ describe('account status', () => {
     expect(mock.calls()[0]).toEqual({ method: 'tokens.retrieve', args: [] });
     expect(mock.calls().slice(1)).toEqual([{
       method: 'lists.list',
-      args: [{ limit: 50, skip: 0 }],
+      args: [{ statusIs: 'active', limit: 50, skip: 0 }],
     }]);
   });
 });
