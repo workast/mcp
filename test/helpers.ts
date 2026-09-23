@@ -1,11 +1,38 @@
 import { afterAll, afterEach, expect } from 'vitest';
-import { mockWorkast } from '@workast/sdk/mock';
+import { examples, mockWorkast } from '@workast/sdk/mock';
 
 export const API_KEY = 'test-api-key';
 
+type PendingInterceptor = { method: string };
+
 export function setupWorkastMock() {
   const mock = mockWorkast();
-  afterEach(() => mock.reset());
+
+  const stubTokensRetrieve = () => {
+    // Match only when no later tokens.retrieve.on() was registered (FIFO would otherwise ignore .rejects()).
+    mock.tokens.retrieve.on(() => {
+      const pendingRetrieve = (mock.pending() as PendingInterceptor[])
+        .filter((interceptor) => interceptor.method === 'tokens.retrieve');
+      return pendingRetrieve.length === 1;
+    }).resolves(examples.tokenDetails);
+  };
+
+  const stubUsersMe = () => {
+    // Match only when no later users.me.on() was registered (FIFO would otherwise ignore .rejects()).
+    mock.users.me.on(() => {
+      const pendingMe = (mock.pending() as PendingInterceptor[])
+        .filter((interceptor) => interceptor.method === 'users.me');
+      return pendingMe.length === 1;
+    }).resolves(examples.userResource);
+  };
+
+  stubTokensRetrieve();
+  stubUsersMe();
+  afterEach(() => {
+    mock.reset();
+    stubTokensRetrieve();
+    stubUsersMe();
+  });
   afterAll(() => mock.restore());
   return mock;
 }
@@ -14,6 +41,7 @@ export type ToolCallMessage = {
   result?: {
     content?: Array<{ type: string; text: string }>;
     isError?: boolean;
+    structuredContent?: unknown;
   };
   error?: unknown;
 };
@@ -38,11 +66,90 @@ export function expectToolData(message: ToolCallMessage, expected: unknown): voi
   expect(JSON.parse(text as string)).toEqual(expected);
 }
 
-export function expectUnauthorizedTool(message: ToolCallMessage): void {
+export type ToolErrorMatch = {
+  param?: string;
+  message: string | RegExp;
+  status?: number;
+};
+
+type ParsedToolError = {
+  param?: unknown;
+  suggestion?: unknown;
+};
+
+function matchingError(match: ToolErrorMatch): Record<string, unknown> {
+  const errorMatch: Record<string, unknown> = {
+    message: match.message instanceof RegExp
+      ? expect.stringMatching(match.message)
+      : match.message,
+    suggestion: expect.any(String),
+  };
+  if (match.param !== undefined) {
+    errorMatch.param = match.param;
+  }
+  if (match.status !== undefined) {
+    errorMatch.status = match.status;
+  }
+  return errorMatch;
+}
+
+function expectErrorEntry(
+  entry: ParsedToolError | undefined,
+  match: ToolErrorMatch,
+): void {
+  expect(typeof entry?.suggestion).toBe('string');
+  expect(String(entry?.suggestion).length).toBeGreaterThan(0);
+  if (match.param === undefined) {
+    expect(entry).not.toHaveProperty('param');
+  }
+}
+
+export function expectToolError(
+  message: ToolCallMessage,
+  match: ToolErrorMatch,
+  extra: Record<string, unknown> = {},
+): void {
   expect(message.error).toBeUndefined();
   expect(message.result?.isError).toBe(true);
-  expect(message.result?.content?.[0]?.text).toContain('Unauthorized');
-  expect(message.result?.content?.[0]?.text).toContain('401');
+  const text = message.result?.content?.[0]?.text;
+  expect(text).toBeTruthy();
+  const payload = JSON.parse(text as string) as {
+    errors?: ParsedToolError[];
+  };
+  expect(payload).toEqual({
+    errors: [expect.objectContaining(matchingError(match))],
+    ...extra,
+  });
+  expectErrorEntry(payload.errors?.[0], match);
+}
+
+export function expectUnauthorizedTool(message: ToolCallMessage): void {
+  expectToolError(message, {
+    message: /Unauthorized/,
+    status: 401,
+  });
+}
+
+export function expectToolPartialData(
+  message: ToolCallMessage,
+  expected: { tasks: unknown; errors: ToolErrorMatch[] },
+): void {
+  expect(message.error).toBeUndefined();
+  expect(message.result?.isError).toBeFalsy();
+  const text = message.result?.content?.[0]?.text;
+  expect(text).toBeTruthy();
+  const payload = JSON.parse(text as string) as {
+    errors?: ParsedToolError[];
+  };
+  expect(payload).toEqual({
+    tasks: expected.tasks,
+    errors: expected.errors.map((match) =>
+      expect.objectContaining(matchingError(match)),
+    ),
+  });
+  expected.errors.forEach((match, index) => {
+    expectErrorEntry(payload.errors?.[index], match);
+  });
 }
 
 export type JsonRpcMessage = {

@@ -1,157 +1,223 @@
-import { ApiError, type Workast } from '@workast/sdk';
+import { AccountError, ApiError, TimeoutError, type Workast } from '@workast/sdk';
+import { z } from 'zod';
+import { getClient } from './analytics';
+import { logger } from './logger';
 import { createWorkast } from './workast';
-
-const CHARACTER_LIMIT = 25000;
 
 type ToolContent = {
   content: [{ type: 'text'; text: string }];
+  structuredContent?: unknown;
   isError?: boolean;
 };
 
-function serializedLength(value: unknown): number {
-  return JSON.stringify(value).length;
+export type ToolErrorType = 'account' | 'timeout' | 'api';
+
+export type ToolErrorEntry = {
+  param?: string;
+  message: string;
+  suggestion: string;
+  status?: number;
+};
+
+export class ToolError extends Error {
+  readonly errors: ToolErrorEntry[];
+  readonly extra?: Record<string, unknown>;
+  readonly errorType: ToolErrorType;
+  constructor(
+    errors: ToolErrorEntry[],
+    extra?: Record<string, unknown>,
+    errorType: ToolErrorType = 'api',
+  ) {
+    super(JSON.stringify({ errors, ...extra }));
+    this.name = 'ToolError';
+    this.errors = errors;
+    this.extra = extra;
+    this.errorType = errorType;
+  }
 }
 
-function hasTruncatableArrays(value: unknown): boolean {
-  if (Array.isArray(value)) {
-    return true;
+export const errorEntrySchema = z.object({
+  param: z.string().optional(),
+  message: z.string(),
+  suggestion: z.string(),
+  status: z.number().optional(),
+});
+
+const USER_DEACTIVATED = {
+  message: 'Your account has been deactivated',
+  suggestion: 'Contact your team administrator.',
+  status: 401,
+} as const;
+
+const USER_SUSPENDED = {
+  message: 'Your account has been suspended',
+  suggestion: 'Contact Workast support.',
+  status: 401,
+} as const;
+
+const TEAM_DEACTIVATED = {
+  message: 'Team has been deactivated',
+  suggestion: 'Contact Workast support.',
+  status: 401,
+} as const;
+
+const TEAM_SUSPENDED = {
+  message: 'Team has been suspended',
+  suggestion: 'Contact Workast support.',
+  status: 403,
+} as const;
+
+function suggestionForStatus(status: number): string {
+  switch (status) {
+    case 401:
+      return 'Check the Workast authorization token.';
+    case 403:
+      return 'Check that you have permission for this action.';
+    case 404:
+      return 'Verify the id.';
+    case 400:
+      return 'Check the tool arguments.';
+    default:
+      return 'Retry the request.';
   }
-  return value != null
-    && typeof value === 'object'
-    && Object.values(value).some((item) => Array.isArray(item));
 }
 
-function cloneForTruncation(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.slice();
-  }
-  if (value != null && typeof value === 'object') {
-    const copy: Record<string, unknown> = { ...value as Record<string, unknown> };
-    for (const key of Object.keys(copy)) {
-      if (Array.isArray(copy[key])) {
-        copy[key] = (copy[key] as unknown[]).slice();
-      }
+export function toolErrorEntry(
+  error: ApiError | TimeoutError,
+  param?: string,
+): ToolErrorEntry {
+  const entry: ToolErrorEntry = error instanceof ApiError
+    ? {
+      message: error.message,
+      suggestion: suggestionForStatus(error.status),
+      status: error.status,
     }
-    return copy;
-  }
-  return value;
-}
-
-function arrayItemCount(value: unknown): number {
-  if (Array.isArray(value)) {
-    return value.length;
-  }
-  if (value != null && typeof value === 'object') {
-    return Object.values(value).reduce(
-      (sum, item) => sum + (Array.isArray(item) ? item.length : 0),
-      0,
-    );
-  }
-  return 0;
-}
-
-function halveLargestArray(value: unknown): boolean {
-  if (Array.isArray(value)) {
-    if (value.length <= 1) {
-      return false;
-    }
-    value.length = Math.max(1, Math.floor(value.length / 2));
-    return true;
-  }
-  if (value != null && typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    let maxKey: string | null = null;
-    let maxLen = 0;
-    for (const [key, item] of Object.entries(obj)) {
-      if (Array.isArray(item) && item.length > maxLen) {
-        maxKey = key;
-        maxLen = item.length;
-      }
-    }
-    if (maxKey == null || maxLen <= 1) {
-      return false;
-    }
-    obj[maxKey] = (obj[maxKey] as unknown[]).slice(
-      0,
-      Math.max(1, Math.floor(maxLen / 2)),
-    );
-    return true;
-  }
-  return false;
-}
-
-function maybeTruncate(result: unknown): unknown {
-  if (serializedLength(result) <= CHARACTER_LIMIT || !hasTruncatableArrays(result)) {
-    return result;
-  }
-
-  const originalCount = arrayItemCount(result);
-  const truncated = cloneForTruncation(result);
-
-  while (serializedLength(truncated) > CHARACTER_LIMIT) {
-    if (!halveLargestArray(truncated)) {
-      break;
-    }
-  }
-
-  const remainingCount = arrayItemCount(truncated);
-  const truncation_message = `Response truncated from ${originalCount} to ${remainingCount} items. Use limit/skip or add filters to see more results.`;
-
-  if (Array.isArray(truncated)) {
-    return {
-      items: truncated,
-      truncated: true,
-      truncation_message,
+    : {
+      message: error.message,
+      suggestion: 'Retry or narrow the request. The Workast API times out after 30 seconds.',
     };
+  if (typeof param === 'string' && param.length > 0) {
+    entry.param = param;
   }
+  return entry;
+}
 
-  const payload: Record<string, unknown> = {
-    ...(truncated as object),
-    truncated: true,
-    truncation_message,
-  };
-
-  if (remainingCount < originalCount) {
-    if ('count' in payload) {
-      payload.count = remainingCount;
-    }
-    if ('has_more' in payload) {
-      payload.has_more = true;
-    }
-    if ('skip' in payload && 'next_skip' in payload) {
-      payload.next_skip = (payload.skip as number) + remainingCount;
-    }
-    if ('offset' in payload && 'next_offset' in payload) {
-      payload.next_offset = (payload.offset as number) + remainingCount;
-    }
+export function toolErrorFrom(
+  error: unknown,
+  param?: string,
+  extra?: Record<string, unknown>,
+): never {
+  if (error instanceof TimeoutError) {
+    throw new ToolError([toolErrorEntry(error, param)], extra, 'timeout');
   }
-
-  return payload;
+  if (error instanceof ApiError) {
+    throw new ToolError([toolErrorEntry(error, param)], extra, 'api');
+  }
+  throw error;
 }
 
 export async function runWorkast(
   token: string | undefined,
+  tool: string,
   fn: (workast: Workast) => Promise<unknown>,
 ): Promise<ToolContent> {
+  const started = Date.now();
+
   if (!token) {
+    const failed = new ToolError([{
+      message: 'Missing a Workast authorization token',
+      suggestion: 'Send Authorization: Bearer <Workast API key or WAT>.',
+    }]);
+    const duration_ms = Date.now() - started;
+    logger.warn({
+      tool,
+      success: false,
+      duration_ms,
+      error_type: failed.errorType,
+    });
     return {
-      content: [{ type: 'text', text: 'Missing API key' }],
+      content: [{ type: 'text', text: failed.message }],
       isError: true,
     };
   }
 
+  const workast = createWorkast(token);
+  let userId: string | undefined;
   try {
-    const result = await fn(createWorkast(token));
+    const tokenInfo = await workast.tokens.retrieve();
+    userId = tokenInfo.user?.id;
+    const result = await fn(workast);
+    const duration_ms = Date.now() - started;
+    logger.info({
+      tool,
+      success: true,
+      duration_ms,
+    });
+    if (userId) {
+      getClient()?.track({
+        userId,
+        event: 'MCP - Tool Used',
+        properties: {
+          tool,
+          success: true,
+          duration_ms,
+        },
+      });
+    }
     return {
-      content: [{ type: 'text', text: JSON.stringify(maybeTruncate(result)) }],
+      content: [{ type: 'text', text: JSON.stringify(result) }],
+      structuredContent: result,
     };
   } catch (error) {
-    if (error instanceof ApiError) {
+    let failed: ToolError | undefined;
+    if (error instanceof ToolError) {
+      failed = error;
+    } else if (error instanceof AccountError) {
+      switch (error.reason) {
+        case 'UserDeactivatedError':
+          failed = new ToolError([USER_DEACTIVATED], undefined, 'account');
+          break;
+        case 'UserSuspendedError':
+          failed = new ToolError([USER_SUSPENDED], undefined, 'account');
+          break;
+        case 'TeamDeactivatedError':
+          failed = new ToolError([TEAM_DEACTIVATED], undefined, 'account');
+          break;
+        case 'TeamSuspendedError':
+          failed = new ToolError([TEAM_SUSPENDED], undefined, 'account');
+          break;
+      }
+    }
+    if (!failed && (error instanceof TimeoutError || error instanceof ApiError)) {
+      failed = new ToolError(
+        [toolErrorEntry(error)],
+        undefined,
+        error instanceof TimeoutError ? 'timeout' : 'api',
+      );
+    }
+    if (failed) {
+      const duration_ms = Date.now() - started;
+      const error_type = failed.errorType;
+      logger.warn({
+        tool,
+        success: false,
+        duration_ms,
+        error_type,
+      });
+      if (userId) {
+        getClient()?.track({
+          userId,
+          event: 'MCP - Tool Used',
+          properties: {
+            tool,
+            success: false,
+            duration_ms,
+            error_type,
+          },
+        });
+      }
       return {
-        content: [{
-          type: 'text',
-          text: `${error.message} (${error.status})`,
-        }],
+        content: [{ type: 'text', text: failed.message }],
         isError: true,
       };
     }

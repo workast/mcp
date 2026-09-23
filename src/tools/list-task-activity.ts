@@ -1,11 +1,19 @@
-import type { TaskActivitySearchQuery } from '@workast/sdk';
+import type { TaskActivities, TaskActivitySearchQuery } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { activityCardSchema, projectActivity } from '../project';
 import { runWorkast } from '../run-tool';
+
+const outputSchema = z.looseObject({
+  activities: z.array(activityCardSchema),
+  count: z.number(),
+  skip: z.number(),
+  has_more: z.boolean(),
+  next_skip: z.number().nullable(),
+});
 
 const inputSchema = z.object({
   taskId: z.string().describe('Task ID'),
-  type: z.string().optional().describe('Activity type, e.g. comment'),
   limit: z.number().int().min(1).max(200).default(50)
     .describe('Maximum number of activities to return (1–200)'),
   skip: z.number().int().min(0).default(0)
@@ -17,27 +25,26 @@ export function registerListTaskActivity(server: McpServer): void {
     'workast_list_task_activity',
     {
       title: 'List Task Activity',
-      description: 'List activity on a task. Optionally filter by type (e.g. comment).',
+      description: 'List activity on a task.',
       inputSchema,
+      outputSchema,
       annotations: {
         title: 'List Task Activity',
         openWorldHint: false,
         readOnlyHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_task_activity', async (workast) => {
       const query: TaskActivitySearchQuery = {
         limit: args.limit,
         skip: args.skip,
       };
-      if (args.type) {
-        query.type = [args.type] as TaskActivitySearchQuery['type'];
-      }
-      const result = await workast.tasks.activities.list(args.taskId, query);
+      const result: TaskActivities = await workast.tasks.activities.list(args.taskId, query);
       const count = result.activities.length;
       const has_more = args.skip + count < result.total;
       return {
         ...result,
+        activities: result.activities.map(projectActivity),
         count,
         skip: args.skip,
         has_more,

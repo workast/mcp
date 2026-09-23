@@ -1,14 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
 const { customField, list, searchResults, subList, tag, task, user } = examples;
+const searchHit = searchResults.tasks[0];
+const searchTaskCard = {
+  status: searchHit.status,
+  summary: 'Ship v3',
+  shortId: searchHit.shortId,
+  createdAt: searchHit.createdAt,
+  updatedAt: searchHit.updatedAt,
+  link: searchHit.link,
+  id: searchHit.id,
+  list: { id: searchHit.list.id, name: searchHit.list.name },
+  subList: { id: searchHit.subList.id, name: searchHit.subList.name },
+  assignedTo: [{ id: searchHit.assignedTo[0].id, name: searchHit.assignedTo[0].name }],
+  allDay: searchHit.allDay,
+  createdBy: { id: searchHit.createdBy.id, name: searchHit.createdBy.name },
+  hasDescription: searchHit.hasDescription,
+  numberOfComments: searchHit.numberOfComments,
+  numberOfAttachments: searchHit.numberOfAttachments,
+  totalSubTasks: searchHit.totalSubTasks,
+  completedSubTasks: searchHit.completedSubTasks,
+  isSubscribed: searchHit.isSubscribed,
+  milestones: searchHit.milestones,
+  fields: [],
+};
 
 function searchPayload(predicates: unknown[], paging: { limit?: number; skip?: number } = {}) {
   return {
@@ -16,7 +38,7 @@ function searchPayload(predicates: unknown[], paging: { limit?: number; skip?: n
     includeSubTasks: true,
     sort: [{ field: 'createdAt', direction: -1 }],
     limit: paging.limit ?? 25,
-    skip: paging.skip ?? 0,
+    ...(paging.skip ? { skip: paging.skip } : {}),
     expand: ['listId', 'assignedTo'],
   };
 }
@@ -38,13 +60,17 @@ describe('workast_search_tasks tool', () => {
     const count = searchResults.tasks.length;
     const has_more = 0 + count < searchResults.total;
     expectToolData(message, {
-      ...searchResults,
+      tasks: [searchTaskCard],
+      total: searchResults.total,
+      hiddenTasks: searchResults.hiddenTasks,
       count,
       skip: 0,
       has_more,
       next_skip: has_more ? count : null,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'tasks.list',
       args: [body],
     }]);
@@ -179,6 +205,44 @@ describe('workast_search_tasks tool', () => {
     );
   });
 
+  it('keeps an empty custom field value as a fieldValues predicate', async () => {
+    await expectSearch(
+      { customFields: [{ fieldId: customField.id, value: '' }] },
+      [{ type: 'fieldValues', attribute: customField.id, comparison: 'eq', value: '' }],
+    );
+  });
+
+  it('does not emit a fieldValues predicate when the custom field id is blank', async () => {
+    await expectSearch(
+      { customFields: [{ fieldId: '', value: 'High' }] },
+      [],
+    );
+  });
+
+  it('omits empty optional filters so they do not become predicates', async () => {
+    await expectSearch(
+      {
+        q: '',
+        statusIs: 'pending',
+        assignedTo: [''],
+        dueDateAfter: '   ',
+        dueDateBefore: '2026-09-21',
+        createdBy: [],
+        tags: [],
+        customFields: [{ fieldId: '', value: '' }],
+      },
+      [
+        { type: 'status', attribute: 'status', comparison: 'eq', value: 'pending' },
+        {
+          type: 'date',
+          attribute: 'dueDate',
+          comparison: 'lte',
+          value: '2026-09-21',
+        },
+      ],
+    );
+  });
+
   it('joins multiple filters with AND predicates', async () => {
     await expectSearch(
       {
@@ -201,20 +265,6 @@ describe('workast_search_tasks tool', () => {
     );
   });
 
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.tasks.list.on(searchPayload([
-      { type: 'status', attribute: 'status', comparison: 'eq', value: 'pending' },
-    ])).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_search_tasks', {
-      statusIs: 'pending',
-    });
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
-  });
-
   it('forwards limit and skip on the search body', async () => {
     const predicates = [
       { type: 'string', attribute: 'text', comparison: 'contains', value: 'Ship' },
@@ -231,14 +281,20 @@ describe('workast_search_tasks tool', () => {
 
     expect(status).toBe(200);
     expect(message.error).toBeUndefined();
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'tasks.list',
       args: [body],
     }]);
   });
 
-  it('defaults to limit 25 and skip 0 when paging args are omitted', async () => {
+  it('defaults to limit 25 and omits skip from the search body', async () => {
     await expectSearch({}, []);
+  });
+
+  it('omits skip from the search body when skip is 0', async () => {
+    await expectSearch({ skip: 0 }, []);
   });
 
   it('includes pagination fields when more results remain', async () => {
@@ -279,45 +335,5 @@ describe('workast_search_tasks tool', () => {
     const data = JSON.parse(text as string);
     expect(data.has_more).toBe(false);
     expect(data.next_skip).toBeNull();
-  });
-
-  it('marks oversized search results as truncated', async () => {
-    const padded = { ...task, description: 'x'.repeat(200) };
-    const tasks = Array.from({ length: 200 }, (_, i) => ({
-      ...padded,
-      id: `${task.id}-${i}`,
-    }));
-    expect(JSON.stringify({ tasks, total: 200 }).length).toBeGreaterThan(25000);
-
-    const body = searchPayload([]);
-    mock.tasks.list.on(body).resolves({ tasks, total: 200 });
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_search_tasks', {});
-
-    expect(status).toBe(200);
-    const text = message.result?.content?.[0]?.text;
-    expect(text).toBeTruthy();
-    const data = JSON.parse(text as string);
-    expect(data.truncated).toBe(true);
-    expect(data.truncation_message).toEqual(expect.stringMatching(/truncated/i));
-    expect(data.truncation_message).toEqual(expect.stringMatching(/limit/i));
-    expect(data.tasks.length).toBeLessThan(tasks.length);
-    expect(data.count).toBe(data.tasks.length);
-    expect(data.has_more).toBe(true);
-  });
-
-  it('passes a small search result through without truncated', async () => {
-    const body = searchPayload([]);
-    mock.tasks.list.on(body).resolves(searchResults);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_search_tasks', {});
-
-    expect(status).toBe(200);
-    const text = message.result?.content?.[0]?.text;
-    expect(text).toBeTruthy();
-    const data = JSON.parse(text as string);
-    expect(data.truncated).toBeUndefined();
   });
 });

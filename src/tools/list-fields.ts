@@ -1,5 +1,7 @@
+import type { CustomField } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { fieldDefCardSchema, projectFieldDef } from '../project';
 import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
@@ -11,19 +13,20 @@ export function registerListFields(server: McpServer): void {
     'workast_list_fields',
     {
       title: 'List Fields',
-      description: 'List custom fields. Optionally filter to a space.',
+      description: 'List custom fields. Optionally filter to a space. Use this tool to get the field ID of a custom field to set on a task.',
       inputSchema,
+      outputSchema: z.object({ fields: z.array(fieldDefCardSchema) }),
       annotations: {
         title: 'List Fields',
         openWorldHint: false,
         readOnlyHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
-      if (args.spaceId) {
-        return workast.fields.list({ listId: args.spaceId });
-      }
-      return workast.fields.list();
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_fields', async (workast) => {
+      const fields: CustomField[] = args.spaceId
+        ? await workast.fields.list({ listId: args.spaceId })
+        : await workast.fields.list();
+      return { fields: fields.map(projectFieldDef) };
     }),
   );
 }

@@ -1,5 +1,7 @@
+import type { SearchDetail } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { projectReport, reportCardSchema } from '../project';
 import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
@@ -15,14 +17,19 @@ export function registerRetrieveReport(server: McpServer): void {
       title: 'Retrieve Report',
       description: 'Retrieve a saved report by ID, including the report\'s tasks.',
       inputSchema,
+      outputSchema: reportCardSchema,
       annotations: {
         title: 'Retrieve Report',
         openWorldHint: false,
         readOnlyHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => (
-      workast.searches.retrieve(args.reportId, { getTasks: args.getTasks })
-    )),
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_report', async (workast) => {
+      const report: SearchDetail = await workast.searches.retrieve(
+        args.reportId,
+        { getTasks: args.getTasks },
+      );
+      return projectReport(report);
+    }),
   );
 }

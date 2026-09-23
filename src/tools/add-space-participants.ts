@@ -4,7 +4,7 @@ import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
   spaceId: z.string().describe('Space ID'),
-  users: z.array(z.string()).describe('User IDs to add as participants'),
+  users: z.array(z.string()).min(1).max(50).describe('User IDs to add as participants'),
 });
 
 export function registerAddSpaceParticipants(server: McpServer): void {
@@ -14,6 +14,7 @@ export function registerAddSpaceParticipants(server: McpServer): void {
       title: 'Add Space Participants',
       description: 'Add participants to a Workast space.',
       inputSchema,
+      outputSchema: z.object({ ok: z.literal(true) }),
       annotations: {
         title: 'Add Space Participants',
         openWorldHint: false,
@@ -22,7 +23,7 @@ export function registerAddSpaceParticipants(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_add_space_participants', async (workast) => {
       await workast.lists.participants.add(args.spaceId, { users: args.users });
       return { ok: true };
     }),

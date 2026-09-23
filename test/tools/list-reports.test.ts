@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
 const { searches } = examples;
+const reportCard = {
+  id: searches.searches[0].id,
+  name: searches.searches[0].name,
+  custom: searches.searches[0].custom,
+  link: searches.searches[0].link,
+  createdBy: searches.searches[0].createdBy,
+};
 
 describe('workast_list_reports tool', () => {
   const mock = setupWorkastMock();
@@ -21,48 +27,42 @@ describe('workast_list_reports tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 0,
       has_more: true,
       next_skip: searches.searches.length,
     });
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'searches.list',
       args: [{ limit: 50, skip: 0 }],
     }]);
   });
 
-  it('calls searches.list with home when home is set', async () => {
-    mock.searches.list.on({ home: true, limit: 50, skip: 0 }).resolves(searches);
+  it('calls searches.listHome when home is true', async () => {
+    mock.searches.listHome.on({ limit: 50, skip: 0 }).resolves(searches);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_reports', { home: true });
 
     expect(status).toBe(200);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 0,
       has_more: true,
       next_skip: searches.searches.length,
     });
-    expect(mock.calls()).toEqual([{
-      method: 'searches.list',
-      args: [{ home: true, limit: 50, skip: 0 }],
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+      method: 'searches.listHome',
+      args: [{ limit: 50, skip: 0 }],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.searches.list.on({ limit: 50, skip: 0 }).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_list_reports', {});
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 
   it('forwards limit and skip to searches.list', async () => {
@@ -75,12 +75,14 @@ describe('workast_list_reports tool', () => {
     });
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'searches.list',
       args: [{ limit: 10, skip: 20 }],
     }]);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 20,
@@ -90,7 +92,7 @@ describe('workast_list_reports tool', () => {
   });
 
   it('forwards home with limit and skip', async () => {
-    mock.searches.list.on({ home: true, limit: 10, skip: 0 }).resolves(searches);
+    mock.searches.listHome.on({ limit: 10, skip: 0 }).resolves(searches);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_reports', {
@@ -100,12 +102,14 @@ describe('workast_list_reports tool', () => {
     });
 
     expect(status).toBe(200);
-    expect(mock.calls()).toEqual([{
-      method: 'searches.list',
-      args: [{ home: true, limit: 10, skip: 0 }],
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+      method: 'searches.listHome',
+      args: [{ limit: 10, skip: 0 }],
     }]);
     expectToolData(message, {
-      searches: searches.searches,
+      searches: [reportCard],
       total: searches.total,
       count: searches.searches.length,
       skip: 0,
@@ -129,7 +133,7 @@ describe('workast_list_reports tool', () => {
 
     expect(status).toBe(200);
     expectToolData(message, {
-      searches: page.searches,
+      searches: [reportCard],
       total: page.total,
       count: page.searches.length,
       skip: 0,

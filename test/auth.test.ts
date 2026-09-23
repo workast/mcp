@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '../app/mcp/route';
 import { createHandler } from '../src/create-handler';
 import { API_KEY, mcpRequest } from './helpers';
@@ -10,40 +10,30 @@ function wwwAuthenticate(response: Response): string | null {
 }
 
 describe('MCP auth', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('returns 401 when Authorization is missing', async () => {
     const response = await POST(mcpRequest('ping', {}, { apiKey: null }));
 
     expect(response.status).toBe(401);
   });
 
-  describe('agent mode', () => {
-    const handler = createHandler({ authMode: 'agent' });
+  it('throws when MCP_AUTH_MODE is user and WORKAST_AUTH_URL is missing', () => {
+    vi.stubEnv('MCP_AUTH_MODE', 'user');
+    vi.stubEnv('WORKAST_AUTH_URL', '');
 
-    it('returns 401 when Authorization is missing', async () => {
-      const response = await handler(mcpRequest('ping', {}, { apiKey: null }));
-
-      expect(response.status).toBe(401);
-    });
-
-    it('does not advertise resource_metadata on 401', async () => {
-      const response = await handler(mcpRequest('ping', {}, { apiKey: null }));
-
-      expect(response.status).toBe(401);
-      const challenge = wwwAuthenticate(response);
-      if (challenge != null) {
-        expect(challenge).not.toContain('resource_metadata');
-      }
-    });
-
-    it('returns 200 when Authorization Bearer is present', async () => {
-      const response = await handler(mcpRequest('ping', {}, { apiKey: API_KEY }));
-
-      expect(response.status).toBe(200);
-    });
+    expect(() => createHandler()).toThrow('WORKAST_AUTH_URL is required when MCP_AUTH_MODE=user');
   });
 
-  describe('user mode', () => {
-    const handler = createHandler({ authMode: 'user', authUrl: AUTH_URL });
+  describe('agent mode', () => {
+    let handler: ReturnType<typeof createHandler>;
+
+    beforeEach(() => {
+      vi.stubEnv('MCP_AUTH_MODE', 'agent');
+      handler = createHandler();
+    });
 
     it('returns 401 when Authorization is missing', async () => {
       const response = await handler(mcpRequest('ping', {}, { apiKey: null }));
@@ -67,6 +57,60 @@ describe('MCP auth', () => {
       const response = await handler(mcpRequest('ping', {}, { apiKey: API_KEY }));
 
       expect(response.status).toBe(200);
+    });
+  });
+
+  describe('user mode', () => {
+    let handler: ReturnType<typeof createHandler>;
+
+    beforeEach(() => {
+      vi.stubEnv('MCP_AUTH_MODE', 'user');
+      vi.stubEnv('WORKAST_AUTH_URL', AUTH_URL);
+      handler = createHandler();
+    });
+
+    it('returns 401 when Authorization is missing', async () => {
+      const response = await handler(mcpRequest('ping', {}, { apiKey: null }));
+
+      expect(response.status).toBe(401);
+    });
+
+    it('returns 401 with WWW-Authenticate resource_metadata', async () => {
+      const response = await handler(mcpRequest('ping', {}, { apiKey: null }));
+
+      expect(response.status).toBe(401);
+      const challenge = wwwAuthenticate(response);
+      expect(challenge).toMatch(/Bearer/i);
+      expect(challenge).toContain('resource_metadata=');
+      const metadataUrl = challenge?.match(/resource_metadata="([^"]+)"/)?.[1];
+      expect(metadataUrl).toBeTruthy();
+      expect(metadataUrl).toContain('/.well-known/oauth-protected-resource');
+    });
+
+    it('returns 200 when Authorization Bearer is present', async () => {
+      const response = await handler(mcpRequest('ping', {}, { apiKey: API_KEY }));
+
+      expect(response.status).toBe(200);
+    });
+
+    it('pins WWW-Authenticate resource_metadata to MCP_PUBLIC_ORIGIN', async () => {
+      vi.stubEnv('MCP_PUBLIC_ORIGIN', 'https://mcp.workast.com');
+      handler = createHandler();
+
+      const base = mcpRequest('ping', {}, { apiKey: null });
+      const request = new Request(base, {
+        headers: {
+          ...Object.fromEntries(base.headers),
+          'X-Forwarded-Host': 'evil.com',
+        },
+      });
+      const response = await handler(request);
+
+      expect(response.status).toBe(401);
+      const challenge = wwwAuthenticate(response);
+      const metadataUrl = challenge?.match(/resource_metadata="([^"]+)"/)?.[1];
+      expect(metadataUrl).toBe('https://mcp.workast.com/.well-known/oauth-protected-resource');
+      expect(challenge).not.toContain('evil.com');
     });
   });
 });

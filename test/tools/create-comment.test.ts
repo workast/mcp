@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -25,24 +24,18 @@ describe('workast_create_comment tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, commentActivity);
-    expect(mock.calls()).toEqual([{
+    expectToolData(message, {
+      id: commentActivity.id,
+      type: 'comment',
+      createdAt: commentActivity.createdAt,
+      text: 'Standup',
+    });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'tasks.activities.create',
       args: [task.id, commentBody],
     }]);
-    expect(mock.calls()[0].args[1]).not.toHaveProperty('parent');
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.tasks.activities.create.on(task.id, commentBody).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_create_comment', {
-      taskId: task.id,
-      comment: commentActivity.value,
-    });
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
+    expect(mock.calls()[1].args[1]).not.toHaveProperty('parent');
   });
 });

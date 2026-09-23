@@ -1,5 +1,7 @@
+import type { MeetingDetail } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { meetingCardSchema, projectMeeting } from '../project';
 import { runWorkast } from '../run-tool';
 
 const inputSchema = z.object({
@@ -15,19 +17,20 @@ export function registerRetrieveMeeting(server: McpServer): void {
       title: 'Retrieve Meeting',
       description: 'Retrieve a meeting. Set includeTranscript to also return recording assets.',
       inputSchema,
+      outputSchema: meetingCardSchema,
       annotations: {
         title: 'Retrieve Meeting',
         openWorldHint: false,
         readOnlyHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, async (workast) => {
-      const meeting = await workast.meetings.retrieve(args.meetingId);
+    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_meeting', async (workast) => {
+      const meeting: MeetingDetail = await workast.meetings.retrieve(args.meetingId);
       if (!args.includeTranscript) {
-        return meeting;
+        return projectMeeting(meeting);
       }
       const recording = await workast.meetings.retrieveRecording(args.meetingId);
-      return { ...meeting, recording };
+      return projectMeeting({ ...meeting, recording });
     }),
   );
 }

@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { examples, errors } from '@workast/sdk/mock';
+import { examples } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
 import {
   callTool,
   expectToolData,
-  expectUnauthorizedTool,
   setupWorkastMock,
 } from '../helpers';
 
@@ -23,23 +22,15 @@ describe('workast_create_sublist tool', () => {
     });
 
     expect(status).toBe(200);
-    expectToolData(message, subList);
-    expect(mock.calls()).toEqual([{
+    expectToolData(message, {
+      id: subList.id,
+      name: subList.name,
+    });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
       method: 'lists.sublists.create',
       args: [list.id, { name: subList.name }],
     }]);
-  });
-
-  it('returns a failed tool result on SDK 401', async () => {
-    mock.lists.sublists.create.on(list.id, { name: subList.name }).rejects(errors.unauthorized);
-    const POST = createHandler();
-
-    const { status, message } = await callTool(POST, 'workast_create_sublist', {
-      spaceId: list.id,
-      name: subList.name,
-    });
-
-    expect(status).toBe(200);
-    expectUnauthorizedTool(message);
   });
 });

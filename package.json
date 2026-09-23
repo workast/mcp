@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval": "mcp-eval-gateway"
   },
   "repository": {
     "type": "git",
@@ -30,10 +31,12 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@customerio/cdp-analytics-node": "^0.5.9",
     "@modelcontextprotocol/server": "^2.0.0",
-    "@workast/sdk": "^3.1.0",
+    "@workast/sdk": "^3.4.0",
     "mcp-handler": "^2.0.0",
     "next": "^15.5.0",
+    "pino": "^10.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^4.0.0"
@@ -42,6 +45,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "mcp-eval-gateway": "^1.4.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
