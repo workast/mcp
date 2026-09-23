@@ -1,6 +1,7 @@
 import type { SearchResults, TaskSearch } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { omitEmpty } from '../omit-empty';
 import { projectSearchTask, searchTaskCardSchema } from '../project';
 import { runWorkast } from '../run-tool';
 
@@ -44,7 +45,7 @@ const inputSchema = z.object({
   limit: z.number().int().min(1).max(100).default(25)
     .describe('Maximum number of tasks to return (1–100)'),
   skip: z.number().int().min(0).default(0)
-    .describe('Number of tasks to skip'),
+    .describe('Number of tasks to skip. Send 1 or more; omit for the first page.'),
 });
 
 type Predicate = TaskSearch['predicates'][number];
@@ -137,7 +138,7 @@ export function registerSearchTasks(server: McpServer): void {
     'workast_search_tasks',
     {
       title: 'Search Tasks',
-      description: 'Search tasks with filters. Multiple filters are combined with AND.',
+      description: 'Search tasks with filters. Multiple filters are combined with AND. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema,
       annotations: {
@@ -147,27 +148,29 @@ export function registerSearchTasks(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_search_tasks', async (workast) => {
+      const filters = omitEmpty(args);
+      const skip = filters.skip ?? 0;
       const body = {
-        predicates: compilePredicates(args),
+        predicates: compilePredicates(filters),
         includeSubTasks: true,
         sort: [{ field: 'createdAt', direction: -1 }],
-        limit: args.limit,
-        skip: args.skip,
+        limit: filters.limit,
         expand: ['listId', 'assignedTo'],
+        ...(skip > 0 ? { skip } : {}),
       } as TaskSearch;
       const result = await workast.tasks.list(body) as SearchResults & {
         tasks: NonNullable<SearchResults['tasks']>;
         total: number;
       };
       const count = result.tasks.length;
-      const has_more = args.skip + count < result.total;
+      const has_more = skip + count < result.total;
       return {
         ...result,
         tasks: result.tasks.map(projectSearchTask),
         count,
-        skip: args.skip,
+        skip,
         has_more,
-        next_skip: has_more ? args.skip + count : null,
+        next_skip: has_more ? skip + count : null,
       };
     }),
   );

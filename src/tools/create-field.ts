@@ -1,6 +1,7 @@
 import type { CustomField, CustomFieldCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { omitEmpty } from '../omit-empty';
 import { createdFieldCardSchema, projectCreatedField } from '../project';
 import { runWorkast, ToolError, toolErrorFrom } from '../run-tool';
 
@@ -19,7 +20,7 @@ export function registerCreateField(server: McpServer): void {
     'workast_create_field',
     {
       title: 'Create Field',
-      description: 'Create a custom field and enable it on a space.',
+      description: 'Create a custom field and enable it on a space. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: createdFieldCardSchema,
       annotations: {
@@ -38,11 +39,11 @@ export function registerCreateField(server: McpServer): void {
           suggestion: 'Provide options when type is options.',
         }]);
       }
-      const body = {
+      const body = omitEmpty({
         name: args.name,
         type: args.type,
-        ...(args.options != null ? { options: args.options } : {}),
-      } as CustomFieldCreate;
+        options: args.options,
+      }) as CustomFieldCreate;
       const field: CustomField = await workast.fields.create(body);
       try {
         await workast.lists.fields.enable(args.spaceId, field.id);

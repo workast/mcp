@@ -1,6 +1,7 @@
 import type { TaskPatch } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { omitEmpty } from '../omit-empty';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 
 const inputSchema = z.object({
@@ -29,7 +30,7 @@ export function registerUpdateTasks(server: McpServer): void {
     'workast_update_tasks',
     {
       title: 'Update Tasks',
-      description: 'Update one or more tasks. Does not change status; use workast_complete_tasks to complete.',
+      description: 'Update one or more tasks. Does not change status; use workast_complete_tasks to complete. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({ succeeded: z.array(z.string()) }),
       annotations: {
@@ -42,7 +43,9 @@ export function registerUpdateTasks(server: McpServer): void {
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_tasks', async (workast) => {
       const { taskIds, summary, ...rest } = args;
-      const patch = (summary === undefined ? rest : { text: summary, ...rest }) as TaskPatch;
+      const patch = omitEmpty(
+        summary === undefined ? rest : { text: summary, ...rest },
+      ) as TaskPatch;
       const succeeded = [];
 
       for (const [i, taskId] of taskIds.entries()) {

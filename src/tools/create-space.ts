@@ -1,6 +1,7 @@
 import type { List, ListCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { omitEmpty } from '../omit-empty';
 import { createdSpaceCardSchema, projectCreatedSpace } from '../project';
 import { runWorkast } from '../run-tool';
 
@@ -17,7 +18,7 @@ export function registerCreateSpace(server: McpServer): void {
     'workast_create_space',
     {
       title: 'Create Space',
-      description: 'Create a Workast space. A space is a collection of tasks that are related to a specific project, topic, department, client. Always check if a relevant space already exists before creating a new one.',
+      description: 'Create a Workast space. A space is a collection of tasks that are related to a specific project, topic, department, client. Always check if a relevant space already exists before creating a new one. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: createdSpaceCardSchema,
       annotations: {
@@ -29,11 +30,11 @@ export function registerCreateSpace(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_space', async (workast) => {
-      const body = {
+      const body = omitEmpty({
         name: args.name,
-        ...(args.participants != null ? { participants: args.participants } : {}),
-        ...(args.privacy != null ? { privacy: args.privacy } : {}),
-      } as ListCreate;
+        participants: args.participants,
+        privacy: args.privacy,
+      }) as ListCreate;
       const space: List = await workast.lists.create(body);
       return projectCreatedSpace(space);
     }),

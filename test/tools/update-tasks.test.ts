@@ -8,7 +8,7 @@ import {
   setupWorkastMock,
 } from '../helpers';
 
-const { task, user } = examples;
+const { customField, task, user } = examples;
 
 const patchInput = {
   summary: task.text,
@@ -43,6 +43,46 @@ describe('workast_update_tasks tool', () => {
       args: [task.id, patchBody],
     }]);
     expect(mock.calls()[1].args[1]).not.toHaveProperty('status');
+  });
+
+  it('omits empty optional fields from the patch', async () => {
+    mock.tasks.update.on(task.id, { dueDate: '2026-09-28' }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      description: '',
+      startDate: '',
+      dueDate: '2026-09-28',
+      dueDateTime: '',
+      subListId: '',
+      fields: [],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, { dueDate: '2026-09-28' }] },
+    ]);
+  });
+
+  it('keeps an empty custom field value so the field can be cleared', async () => {
+    const patch = { fields: [{ id: customField.id, value: '' }] };
+    mock.tasks.update.on(task.id, patch).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      fields: [{ id: customField.id, value: '' }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, patch] },
+    ]);
   });
 
   it('calls tasks.update for each id when updating two tasks', async () => {

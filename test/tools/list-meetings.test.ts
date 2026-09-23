@@ -87,6 +87,28 @@ describe('workast_list_meetings tool', () => {
     }]);
   });
 
+  it('omits empty participants and pageToken from the list query', async () => {
+    const query = { ...timeRange, maxResults: 50 };
+    mock.meetings.list.on(query).resolves(meetings);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_meetings', {
+      startDateAfter: timeRange.timeMin,
+      startDateBefore: timeRange.timeMax,
+      participants: [],
+      pageToken: '',
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { ...meetingsCard, has_more: true });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+      method: 'meetings.list',
+      args: [query],
+    }]);
+  });
+
   it('forwards limit as maxResults and pageToken', async () => {
     const query = { ...timeRange, maxResults: 10, pageToken: meetings.nextPageToken };
     mock.meetings.list.on(query).resolves(meetings);

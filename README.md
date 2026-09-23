@@ -49,7 +49,7 @@ Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workas
 | Tool | Description |
 | --- | --- |
 | `workast_ping` | Health check (requires auth) |
-| `workast_list_spaces` | List spaces (optional `type`, `participants`, `limit`, `skip`) |
+| `workast_list_spaces` | List active spaces (optional `type`, `participants`, `includeArchived`, `limit`, `skip`) |
 | `workast_create_space` | Create a space (`name`, optional `participants`, `privacy`) |
 | `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
 | `workast_list_space_participants` | List space participants (`spaceId`) |
@@ -110,7 +110,7 @@ nvm use
 npm run eval
 ```
 
-The runner loads `eval/config.ts` and `eval/tasks.yaml`. Add tasks there as you add tools.
+The runner loads `eval/config.ts` and `eval/tasks.yaml`. The config sets a current-date `systemPrompt`. `before` archives active spaces whose names contain `McpEval`, `holiday campaign`, or `comp planning` (skipping spaces the token is not a participant of), seeds `McpEval Marketing`, `McpEval Product`, `McpEval Design`, and `McpEval Bugs` when missing, and reopens the three short-ID batch tasks. `after` archives those same spaces and deletes the write-eval tasks. Add tasks there as you add tools.
 
 ## Contributing
 

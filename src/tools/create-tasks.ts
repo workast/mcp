@@ -1,6 +1,7 @@
 import type { TaskCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { omitEmpty } from '../omit-empty';
 import { projectSearchTask, searchTaskCardSchema } from '../project';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 
@@ -41,7 +42,7 @@ export function registerCreateTasks(server: McpServer): void {
     'workast_create_tasks',
     {
       title: 'Create Tasks',
-      description: 'Create one or more tasks in a Workast space. For personal tasks with no space, use workast_create_personal_tasks.',
+      description: 'Create one or more tasks in a Workast space. For personal tasks with no space, use workast_create_personal_tasks. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({ tasks: z.array(searchTaskCardSchema) }),
       annotations: {
@@ -57,7 +58,10 @@ export function registerCreateTasks(server: McpServer): void {
       for (const [i, { summary, ...rest }] of args.tasks.entries()) {
         try {
           created.push(projectSearchTask(
-            await workast.tasks.create(args.spaceId, { text: summary, ...rest } as TaskCreate),
+            await workast.tasks.create(
+              args.spaceId,
+              omitEmpty({ text: summary, ...rest }) as TaskCreate,
+            ),
           ));
         } catch (error) {
           if (created.length > 0) {

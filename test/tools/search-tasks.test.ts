@@ -38,7 +38,7 @@ function searchPayload(predicates: unknown[], paging: { limit?: number; skip?: n
     includeSubTasks: true,
     sort: [{ field: 'createdAt', direction: -1 }],
     limit: paging.limit ?? 25,
-    skip: paging.skip ?? 0,
+    ...(paging.skip ? { skip: paging.skip } : {}),
     expand: ['listId', 'assignedTo'],
   };
 }
@@ -205,6 +205,44 @@ describe('workast_search_tasks tool', () => {
     );
   });
 
+  it('keeps an empty custom field value as a fieldValues predicate', async () => {
+    await expectSearch(
+      { customFields: [{ fieldId: customField.id, value: '' }] },
+      [{ type: 'fieldValues', attribute: customField.id, comparison: 'eq', value: '' }],
+    );
+  });
+
+  it('does not emit a fieldValues predicate when the custom field id is blank', async () => {
+    await expectSearch(
+      { customFields: [{ fieldId: '', value: 'High' }] },
+      [],
+    );
+  });
+
+  it('omits empty optional filters so they do not become predicates', async () => {
+    await expectSearch(
+      {
+        q: '',
+        statusIs: 'pending',
+        assignedTo: [''],
+        dueDateAfter: '   ',
+        dueDateBefore: '2026-09-21',
+        createdBy: [],
+        tags: [],
+        customFields: [{ fieldId: '', value: '' }],
+      },
+      [
+        { type: 'status', attribute: 'status', comparison: 'eq', value: 'pending' },
+        {
+          type: 'date',
+          attribute: 'dueDate',
+          comparison: 'lte',
+          value: '2026-09-21',
+        },
+      ],
+    );
+  });
+
   it('joins multiple filters with AND predicates', async () => {
     await expectSearch(
       {
@@ -251,8 +289,12 @@ describe('workast_search_tasks tool', () => {
     }]);
   });
 
-  it('defaults to limit 25 and skip 0 when paging args are omitted', async () => {
+  it('defaults to limit 25 and omits skip from the search body', async () => {
     await expectSearch({}, []);
+  });
+
+  it('omits skip from the search body when skip is 0', async () => {
+    await expectSearch({ skip: 0 }, []);
   });
 
   it('includes pagination fields when more results remain', async () => {

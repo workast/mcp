@@ -1,0 +1,163 @@
+# Eval tasks for mcp-eval-gateway.
+#
+# Prompts are written the way real Workast users talk to an assistant:
+# spaces contain lists, lists contain tasks, people are referenced by name,
+# tasks by short ID (TQ7ZK) or pasted URL — never by raw API IDs, which
+# users only ever see inside URLs. All the precision lives in `judge`: a
+# judge model scores the tool-call transcript against the expected outcome.
+# Only `ping` uses exact-match `expected`.
+#
+# The scope is tool and argument selection, not API validation, so prompts
+# never ask the agent to verify its own writes. Where a prompt refers to
+# workspace data by name (a coworker, the bugs space, a weekly report), the
+# judge is conditional: the right lookups must happen, and the agent must
+# either act on what it found or say honestly that it doesn't exist —
+# guessing, assigning the wrong person, or fabricating results fails either
+# way.
+#
+# Note: writes land in the connected workspace for real (there are no
+# delete tools), and short IDs that collide with real tasks will genuinely
+# be commented on or completed.
+
+- name: ping
+  prompt: >-
+    Check that your connection to Workast is working. Reply with the ping tool's exact JSON object, including braces — not just the boolean field. Omit unused optional fields; do not send empty strings or empty arrays.
+  expected: '{"ok":true}'
+  required: true
+
+- name: quick-capture
+  prompt: >-
+    Add a task for me — send the updated proposal to Acme. It needs to happen by Friday.
+  judge: >-
+    A single task is created with workast_create_personal_tasks (no spaceId) with a summary about sending the updated proposal to Acme and a due date on the coming Friday. The task is not placed in a team space and no other tasks are created.
+
+- name: campaign-setup
+  prompt: >-
+    We're spinning up the Q4 holiday campaign. Create a space named "McpEval Q4 Holiday Campaign" with lists for Content, Paid Ads, and Email, and add the two kickoff tasks: brief the design team, due next Monday, and lock the campaign budget, due end of the month.
+  judge: >-
+    A space named "McpEval Q4 Holiday Campaign" is created. Three sublists named Content, Paid Ads, and Email are created in it. Two tasks are created in that space: one about briefing the design team due approximately next Monday, and one about locking the campaign budget due approximately the end of the current month. Reusing an existing space with a different name does not pass.
+
+- name: private-space
+  prompt: >-
+    Set up a space named "McpEval Comp Planning". Keep it private — just me for now.
+  judge: >-
+    A space named "McpEval Comp Planning" is created with privacy set to private. No coworkers are added to it. Reusing an existing space with a different name does not pass.
+
+- name: assign-by-name
+  prompt: >-
+    In the McpEval Marketing space, add a task to review the pricing page copy and hand it to Guillermo — he offered to take it this week.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Marketing" and coworkers are listed to find Guillermo. If both exist, a task about reviewing the pricing page copy is created in that space, assigned to Guillermo's user ID, with a due date within about a week. If the space or the coworker doesn't exist, the final response says so — the task is not assigned to somebody else, given a made-up ID, or dropped into an unrelated space.
+
+- name: breakdown-subtasks
+  prompt: >-
+    In the McpEval Product space, add "Revamp customer onboarding" and break it into three pieces: audit the current flow, draft the new welcome emails, and prototype the setup checklist.
+  judge: >-
+    Spaces are listed and the one matching "McpEval Product" is used. A task "Revamp customer onboarding" is created there, and three subtasks are created on it covering the audit, the welcome emails, and the checklist prototype. If no space matches, the agent either creates one or says so — it does not drop the task into an unrelated space.
+
+- name: overdue-reschedule
+  prompt: >-
+    I was out sick last week and everything slipped. Find whatever I've got that's overdue and push it to next Monday.
+  judge: >-
+    The current user's ID is obtained (about-me) and tasks are searched with pending status, assigned to that user, with a due date before today. Every task returned is updated with a due date of the coming Monday. Nothing is marked done. If the search returns nothing, the final response says nothing is overdue.
+
+- name: due-this-week
+  prompt: >-
+    What's coming due across the team in the next week? I want to plan tomorrow's standup.
+  judge: >-
+    Tasks are searched with a due-date window covering approximately the next seven days from today (a due-date-before filter near one week out, optionally a due-date-after near today), rather than by text matching. The final response summarizes the tasks the search returned, or says nothing is due, without inventing tasks.
+
+- name: done-last-week
+  prompt: >-
+    Pulling together the retro — what did the team actually finish last week?
+  judge: >-
+    Tasks are searched with status done and a completed-after filter of approximately seven days ago. The final response summarizes the tasks the search returned, or says nothing was completed, without inventing work.
+
+- name: task-discussion
+  prompt: >-
+    Has there been any movement on the website redesign? Check whether anyone has commented on it recently.
+  judge: >-
+    Tasks are searched with a text filter about the website redesign. If a matching task is found, its activity is listed and the final response summarizes the recent activity faithfully. If nothing matches, the final response says no such task was found. No comments or activity are invented.
+
+- name: comment-short-id
+  prompt: >-
+    Drop a comment on TQ7ZK — client signed off this morning, the build can start.
+  judge: >-
+    The task is resolved using "TQ7ZK" as a short ID (the dedicated short-ID lookup, not a regular ID lookup or text search). If it resolves, a comment with the client sign-off message is created on that task. If it doesn't, the final response says the task couldn't be found and no comment is left on any other task.
+
+- name: short-id-batch-complete
+  prompt: |-
+    All of this shipped in today's release, mark them as done:
+
+    TZ9QV Ship the status page copy
+    TWFJG Ship the login error report
+    TT1CL Ship the export download fix
+  judge: >-
+    Each of the three short IDs (TZ9QV, TWFJG, TT1CL) is looked up as a short ID to resolve the task. The complete-tasks tool is called with the task IDs those lookups returned. Nothing is reported as completed that was not completed via a tool call.
+
+- name: short-id-from-commits
+  prompt: |-
+    Reviewing what went out this morning. These are the commits — can you
+    pull up the tasks they reference so I know what to include in the
+    changelog?
+
+    a3f92c1 T4P6 switch profile insights to the new agent pipeline
+    b7e01d4 fix flaky login test
+    c9d24aa T9UT candidate evaluation agent behind feature flag
+    d102f3e TZP8 export identity check results in candidates download
+  judge: >-
+    The short IDs referenced in the commits (T4P6, T9UT, TZP8) are each looked up as short IDs. No task lookup is made for the commit that references no task. The final response reports each referenced task based on its lookup result, saying it couldn't be found where the lookup returned nothing, without inventing task details.
+
+- name: add-person-to-space
+  prompt: >-
+    Add Guillermo to the McpEval Design space — he's helping out this sprint. And tell me who's in there now.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Design" and coworkers are listed to find Guillermo. If both exist, Guillermo's user ID is added to that space's participants, the participants are listed, and the final response reports who is in the space from that result. If either the space or Guillermo doesn't exist, the final response says so instead of adding someone else or picking an unrelated space.
+
+- name: bugs-priority-field
+  prompt: >-
+    We keep arguing about what to fix first. Add a Priority field to the McpEval Bugs space — High, Medium, Low — unless there's already one there.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Bugs" and that space's existing custom fields are checked. If no priority-like field is already on the space, one is created with type options and options High, Medium, and Low, on that space. If a priority field already exists, or no McpEval Bugs space exists, the final response says so instead of creating a duplicate or attaching the field somewhere unrelated.
+
+- name: weekly-report
+  prompt: >-
+    Run my assigned to me report and give me the highlights.
+  judge: >-
+    Saved reports are listed. If one matching "assigned to me" exists, it is retrieved by an ID taken from that list and the final response summarizes its tasks. If there are no saved reports, the final response says so. No report contents are invented.
+
+- name: meetings-yesterday
+  prompt: >-
+    What meetings did I have yesterday? Grab the notes from them too if there are any. If none, say so.
+  judge: >-
+    Meetings are listed with a time range covering yesterday. If any are returned, at least one is retrieved for its details/notes and the final response summarizes what was found. If none are returned, the final response says there were no meetings yesterday. Nothing is invented.
+
+- name: whoami
+  prompt: >-
+    Quick check before I let this loose on the team — which Workast account and team are you connected to?
+  judge: >-
+    The current user is fetched with the about-me tool and the final response reports the user and team from that result without guessing.
+
+- name: url-paste-space
+  prompt: >-
+    What's on the team's plate in this space? https://acme.workast.com/space/68b9f4127c3ad05e2b6d91c4
+  judge: >-
+    The space ID "68b9f4127c3ad05e2b6d91c4", taken from the URL path, is used to look up the space's tasks (for example a task search filtered to that space ID). The final response reports what the lookup returned — most likely that the space has no tasks or couldn't be found — without inventing tasks.
+
+- name: url-paste-task-panel
+  prompt: >-
+    Can you give me an update on this one? https://acme.workast.com/space/68b9f4127c3ad05e2b6d91c4?task=9d4c2f7a1b8e5d3c6f0a2b4e8c1d7f3a
+  judge: >-
+    A task lookup is made with the ID "9d4c2f7a1b8e5d3c6f0a2b4e8c1d7f3a" from the "task" query parameter — not with the space ID from the URL path as the task ID. The final response reports what the lookup returned — most likely that the task couldn't be found — without inventing task details. It is fine if the agent also inspects the space, as long as the update it attempts is about the task from the query parameter.
+
+- name: url-paste-copy-link
+  prompt: >-
+    A teammate shared this with me — what's the status? https://open.workast.app/812268cc43782895dd671c788576207a/task/7a2e94c1f5b83d60a9c47e12b5f0d386
+  judge: >-
+    A task lookup is made with the ID "7a2e94c1f5b83d60a9c47e12b5f0d386" — the segment after /task/ in the URL — and not with the first path segment "812268cc43782895dd671c788576207a". The final response reports what the lookup returned — most likely that the task couldn't be found — without inventing a status.
+
+- name: url-paste-task-list
+  prompt: >-
+    My manager asked me to chase these two up — where does each one stand? https://open.workast.app/812268cc43782895dd671c788576207a/task/c4e19f7a3b25d8061e9a4c72f8b3d514 and https://open.workast.app/812268cc43782895dd671c788576207a/task/5d803b6e921cf47a8e25b1d09c6f43a7
+  judge: >-
+    Two task lookups are made, using the IDs "c4e19f7a3b25d8061e9a4c72f8b3d514" and "5d803b6e921cf47a8e25b1d09c6f43a7" — the segments after /task/ in each URL. A not-found result for either lookup is a pass. Score the tool calls, not the wording of the final response. Fail only if a lookup is missing, the wrong ID is used, or a status is invented for a task the lookup did not return.

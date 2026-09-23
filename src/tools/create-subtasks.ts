@@ -1,6 +1,7 @@
 import type { SubtaskCreate } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { omitEmpty } from '../omit-empty';
 import { projectSearchTask, searchTaskCardSchema } from '../project';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 
@@ -37,7 +38,7 @@ export function registerCreateSubtasks(server: McpServer): void {
     'workast_create_subtasks',
     {
       title: 'Create Subtasks',
-      description: 'Create one or more subtasks on a parent task.',
+      description: 'Create one or more subtasks on a parent task. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({ subtasks: z.array(searchTaskCardSchema) }),
       annotations: {
@@ -53,7 +54,10 @@ export function registerCreateSubtasks(server: McpServer): void {
       for (const [i, { summary, ...rest }] of args.subtasks.entries()) {
         try {
           created.push(projectSearchTask(
-            await workast.tasks.subtasks.create(args.parentTaskId, { text: summary, ...rest } as SubtaskCreate),
+            await workast.tasks.subtasks.create(
+              args.parentTaskId,
+              omitEmpty({ text: summary, ...rest }) as SubtaskCreate,
+            ),
           ));
         } catch (error) {
           if (created.length > 0) {

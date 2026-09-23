@@ -18,8 +18,8 @@ const spaceCard = {
 describe('workast_list_spaces tool', () => {
   const mock = setupWorkastMock();
 
-  it('calls lists.list with no filters and returns spaces', async () => {
-    mock.lists.list.on({ limit: 50, skip: 0 }).resolves([listEnumerate]);
+  it('calls lists.list with active status and returns spaces', async () => {
+    mock.lists.list.on({ statusIs: 'active', limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_spaces', {});
@@ -36,12 +36,12 @@ describe('workast_list_spaces tool', () => {
       { method: 'tokens.retrieve', args: [] },
       {
       method: 'lists.list',
-      args: [{ limit: 50, skip: 0 }],
+      args: [{ statusIs: 'active', limit: 50, skip: 0 }],
     }]);
   });
 
   it('calls lists.list with type when type is set', async () => {
-    mock.lists.list.on({ type: 'group', limit: 50, skip: 0 }).resolves([listEnumerate]);
+    mock.lists.list.on({ type: 'group', statusIs: 'active', limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_spaces', { type: 'group' });
@@ -58,12 +58,12 @@ describe('workast_list_spaces tool', () => {
       { method: 'tokens.retrieve', args: [] },
       {
       method: 'lists.list',
-      args: [{ type: 'group', limit: 50, skip: 0 }],
+      args: [{ type: 'group', statusIs: 'active', limit: 50, skip: 0 }],
     }]);
   });
 
   it('calls lists.list with participants when participants is set', async () => {
-    mock.lists.list.on({ participants: [user.id], limit: 50, skip: 0 }).resolves([listEnumerate]);
+    mock.lists.list.on({ participants: [user.id], statusIs: 'active', limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_spaces', {
@@ -82,7 +82,31 @@ describe('workast_list_spaces tool', () => {
       { method: 'tokens.retrieve', args: [] },
       {
       method: 'lists.list',
-      args: [{ participants: [user.id], limit: 50, skip: 0 }],
+      args: [{ participants: [user.id], statusIs: 'active', limit: 50, skip: 0 }],
+    }]);
+  });
+
+  it('omits an empty participants array from the list query', async () => {
+    mock.lists.list.on({ statusIs: 'active', limit: 50, skip: 0 }).resolves([listEnumerate]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
+      participants: [],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, {
+      spaces: [spaceCard],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+      method: 'lists.list',
+      args: [{ statusIs: 'active', limit: 50, skip: 0 }],
     }]);
   });
 
@@ -90,6 +114,7 @@ describe('workast_list_spaces tool', () => {
     mock.lists.list.on({
       type: 'group',
       participants: [user.id],
+      statusIs: 'active',
       limit: 50,
       skip: 0,
     }).resolves([listEnumerate]);
@@ -112,12 +137,12 @@ describe('workast_list_spaces tool', () => {
       { method: 'tokens.retrieve', args: [] },
       {
       method: 'lists.list',
-      args: [{ type: 'group', participants: [user.id], limit: 50, skip: 0 }],
+      args: [{ type: 'group', participants: [user.id], statusIs: 'active', limit: 50, skip: 0 }],
     }]);
   });
 
   it('forwards limit and skip to lists.list', async () => {
-    mock.lists.list.on({ limit: 10, skip: 20 }).resolves([listEnumerate]);
+    mock.lists.list.on({ statusIs: 'active', limit: 10, skip: 20 }).resolves([listEnumerate]);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_spaces', {
@@ -130,7 +155,7 @@ describe('workast_list_spaces tool', () => {
       { method: 'tokens.retrieve', args: [] },
       {
       method: 'lists.list',
-      args: [{ limit: 10, skip: 20 }],
+      args: [{ statusIs: 'active', limit: 10, skip: 20 }],
     }]);
     expectToolData(message, {
       spaces: [spaceCard],
@@ -142,7 +167,7 @@ describe('workast_list_spaces tool', () => {
   });
 
   it('defaults to limit 50 and skip 0', async () => {
-    mock.lists.list.on({ limit: 50, skip: 0 }).resolves([listEnumerate]);
+    mock.lists.list.on({ statusIs: 'active', limit: 50, skip: 0 }).resolves([listEnumerate]);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_spaces', {});
@@ -152,7 +177,7 @@ describe('workast_list_spaces tool', () => {
       { method: 'tokens.retrieve', args: [] },
       {
       method: 'lists.list',
-      args: [{ limit: 50, skip: 0 }],
+      args: [{ statusIs: 'active', limit: 50, skip: 0 }],
     }]);
     expectToolData(message, {
       spaces: [spaceCard],
@@ -163,12 +188,37 @@ describe('workast_list_spaces tool', () => {
     });
   });
 
+  it('omits status when includeArchived is set', async () => {
+    mock.lists.list.on({ limit: 50, skip: 0 }).resolves([listEnumerate]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
+      includeArchived: true,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, {
+      spaces: [spaceCard],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+        method: 'lists.list',
+        args: [{ limit: 50, skip: 0 }],
+      },
+    ]);
+  });
+
   it('sets has_more true when the page is full', async () => {
     const spaces = [
       listEnumerate,
       { ...listEnumerate, id: `${listEnumerate.id}-2` },
     ];
-    mock.lists.list.on({ limit: 2, skip: 0 }).resolves(spaces);
+    mock.lists.list.on({ statusIs: 'active', limit: 2, skip: 0 }).resolves(spaces);
     const POST = createHandler();
 
     const { status, message } = await callTool(POST, 'workast_list_spaces', {

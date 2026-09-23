@@ -81,6 +81,35 @@ describe('workast_create_tasks tool', () => {
     }]);
   });
 
+  it('omits empty optional fields from the create body', async () => {
+    mock.tasks.create.on(list.id, { text: task.text, dueDate: '2026-09-28' }).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        assignedTo: [],
+        description: '',
+        startDate: '',
+        dueDate: '2026-09-28',
+        dueDateTime: '',
+        tags: [],
+        meetingId: '',
+        fields: [],
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+      method: 'tasks.create',
+      args: [list.id, { text: task.text, dueDate: '2026-09-28' }],
+    }]);
+  });
+
   it('calls tasks.create with the optional fields that were passed', async () => {
     mock.tasks.create.on(list.id, optionalTaskBody).resolves(task);
     const POST = createHandler();

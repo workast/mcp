@@ -49,6 +49,25 @@ describe('workast_create_space tool', () => {
     expect(mock.calls()[1].args[0]).not.toHaveProperty('type');
   });
 
+  it('omits an empty participants array from the create body', async () => {
+    mock.lists.create.on({ name: list.name }).resolves(list);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_space', {
+      name: list.name,
+      participants: [],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, createdSpaceCard);
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+      method: 'lists.create',
+      args: [{ name: list.name }],
+    }]);
+  });
+
   it('calls lists.create with name, participants, and privacy', async () => {
     const body = {
       name: list.name,
