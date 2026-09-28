@@ -79,6 +79,7 @@ Paginated list and search tools accept page size and offset (`limit`/`skip`, or 
 ```sh
 nvm use
 npm install
+cp .env.sample .env
 npm test
 npm run build
 npm run dev
@@ -92,14 +93,7 @@ For user mode, set `MCP_AUTH_MODE=user` and `WORKAST_AUTH_URL` (the workast-auth
 
 [mcp-eval-gateway](https://github.com/guillegette/mcp-eval-gateway) scores LLM tool use against the in-process `/mcp` handler. It does not start `next dev`.
 
-Put the following values in a `.env` file in the project root:
-
-```sh
-AI_GATEWAY_API_KEY=your-gateway-key
-WORKAST_API_KEY=your-api-key
-# Optional: point the SDK at a local or staging API
-# WORKAST_API_URL=http://localhost:8080
-```
+Copy `.env.sample` to `.env` and set `AI_GATEWAY_API_KEY` and `WORKAST_API_KEY`.
 
 `WORKAST_API_KEY` is sent as the Bearer token. The starter `ping` task does not call the Workast API, so any non-blank value works for that task. Tasks that call Workast tools need a real workspace API key. Set `WORKAST_API_URL` when that API is not `https://api.workast.com`.
 

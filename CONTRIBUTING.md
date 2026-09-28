@@ -13,7 +13,7 @@ npm test
 npm run build
 ```
 
-To score LLM tool use against the MCP handler, add `AI_GATEWAY_API_KEY` and `WORKAST_API_KEY` to `.env` and run `npm run eval`. See the *Run tool evals* section of [README.md](README.md).
+To score LLM tool use against the MCP handler, copy `.env.sample` to `.env`, set `AI_GATEWAY_API_KEY` and `WORKAST_API_KEY`, and run `npm run eval`. See the *Run tool evals* section of [README.md](README.md).
 
 ## Add a tool
 
