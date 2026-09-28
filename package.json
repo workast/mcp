@@ -1,6 +1,6 @@
 {
   "name": "workast-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Workast agent MCP server — Model Context Protocol tools for Workast, authenticated with an API key",
   "type": "module",
   "scripts": {
