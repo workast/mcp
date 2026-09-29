@@ -11,7 +11,7 @@ const inputSchema = z.object({
   email: z.email().optional()
     .describe('Exact email match'),
   role: z.enum(['admin', 'member', 'guest', 'viewer']).optional()
-    .describe('admin, member, guest, or viewer. A viewer can only view and cannot create, edit, or complete work.'),
+    .describe('Filter by role: admin, member, guest, or viewer'),
   limit: z.number().int().min(1).max(200).default(50)
     .describe('Maximum number of coworkers to return (1–200)'),
   offset: z.number().int().min(0).default(0)
