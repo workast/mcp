@@ -34,13 +34,6 @@ import { registerUpdateSpaceReadme } from './tools/update-space-readme';
 import { registerUpdateTasks } from './tools/update-tasks';
 
 export function createHandler() {
-  const authMode = process.env.MCP_AUTH_MODE ?? 'agent';
-  const authUrl = process.env.WORKAST_AUTH_URL;
-
-  if (authMode === 'user' && !authUrl) {
-    throw new Error('WORKAST_AUTH_URL is required when MCP_AUTH_MODE=user');
-  }
-
   const handler = createMcpHandler((server) => {
     server.registerTool(
       'workast_ping',

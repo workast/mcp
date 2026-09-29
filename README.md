@@ -2,14 +2,14 @@
 
 [![CI](https://github.com/workast/mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/workast/mcp/actions/workflows/ci.yml)
 
-MCP host for [Workast](https://workast.com/). Exposes Model Context Protocol tools over Streamable HTTP at `/mcp`.
+MCP host for [Workast](https://workast.com/). Exposes Model Context Protocol tools over Streamable HTTP at `https://mcp.workast.com/mcp`.
 
-| Host | Mode | Auth |
-| --- | --- | --- |
-| `https://agent.workast.com/mcp` | `MCP_AUTH_MODE=agent` (default) | Workast API key (`Authorization: Bearer …`) |
-| `https://mcp.workast.com/mcp` | `MCP_AUTH_MODE=user` | OAuth at workast-auth; send the WAT as `Authorization: Bearer wat::…` |
+Authenticate with either:
 
-User-mode hosts discover OAuth via RFC 9728 Protected Resource Metadata at `/.well-known/oauth-protected-resource`. CIMD and token issuance live on workast-auth.
+- A Workast API key via `Authorization: Bearer …`
+- OAuth at workast-auth: connect with no Authorization header; the client follows the 401 challenge to workast-auth, then sends `Authorization: Bearer wat::…`
+
+OAuth discovery uses RFC 9728 Protected Resource Metadata at `/.well-known/oauth-protected-resource`. CIMD and token issuance live on workast-auth.
 
 A workspace-scoped API key locks tools to that workspace. Create a key in Workast under **Preferences → API**.
 
@@ -17,9 +17,8 @@ A workspace-scoped API key locks tools to that workspace. Create a key in Workas
 
 | Variable | Values | Default |
 | --- | --- | --- |
-| `MCP_AUTH_MODE` | `agent` \| `user` | `agent` |
-| `MCP_PUBLIC_ORIGIN` | Public origin, no path (e.g. `https://mcp.workast.com`) | unset (request origin). Optional; required in production user-mode (and agent-mode for a stable challenge URL) |
-| `WORKAST_AUTH_URL` | Issuer URL of workast-auth (same string as auth `AUTH_URL` / well-known `issuer`, e.g. `https://my.workast.com`) | required when mode is `user` |
+| `WORKAST_AUTH_URL` | Issuer URL of workast-auth (same string as auth `AUTH_URL` / well-known `issuer`) | `https://my.workast.com` |
+| `MCP_PUBLIC_ORIGIN` | Public origin, no path (e.g. `https://mcp.workast.com`) | unset (request origin). Required in production so the 401 challenge and `resource` stay stable |
 | `WORKAST_API_URL` | Workast API origin passed to the SDK as `baseUrl` (for example `http://localhost:8080`) | SDK default (`https://api.workast.com`) |
 | `CUSTOMERIO_WRITE_KEY` | Customer.io CDP write key | unset (analytics no-op) |
 | `CUSTOMERIO_HOST` | Customer.io CDP host (for example `https://cdp-eu.customer.io`) | Customer.io default |
@@ -27,13 +26,13 @@ A workspace-scoped API key locks tools to that workspace. Create a key in Workas
 
 ## Cursor
 
-Add to your Cursor `mcp.json`:
+API key:
 
 ```json
 {
   "mcpServers": {
     "workast": {
-      "url": "https://agent.workast.com/mcp",
+      "url": "https://mcp.workast.com/mcp",
       "headers": {
         "Authorization": "Bearer ${env:WORKAST_API_KEY}"
       }
@@ -43,6 +42,18 @@ Add to your Cursor `mcp.json`:
 ```
 
 Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workast secret API key.
+
+OAuth (client follows the 401 challenge to workast-auth):
+
+```json
+{
+  "mcpServers": {
+    "workast": {
+      "url": "https://mcp.workast.com/mcp"
+    }
+  }
+}
+```
 
 ## Tools
 
@@ -85,9 +96,7 @@ npm run build
 npm run dev
 ```
 
-For agent mode, point the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) or MCPJam at Streamable HTTP → `http://localhost:3000/mcp` and send an `Authorization: Bearer <your-api-key>` header.
-
-For user mode, set `MCP_AUTH_MODE=user` and `WORKAST_AUTH_URL` (the workast-auth issuer) and connect Inspector/MCPJam to `http://localhost:3000/mcp`. Production user-mode URL: `https://mcp.workast.com/mcp`.
+Point the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) or MCPJam at Streamable HTTP → `http://localhost:3000/mcp` and either send `Authorization: Bearer <your-api-key>` or connect with no Authorization header so OAuth discovery runs via `/.well-known/oauth-protected-resource`. The issuer defaults to `https://my.workast.com`; set `WORKAST_AUTH_URL` when workast-auth is somewhere else. Production MCP URL: `https://mcp.workast.com/mcp`.
 
 ## Run tool evals
 
