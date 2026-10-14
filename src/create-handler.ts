@@ -95,7 +95,7 @@ export function createHandler() {
     registerListReports(server);
     registerRetrieveReport(server);
   }, {
-    serverInfo: { name: 'workast-mcp-server', version: '1.0.0' },
+    serverInfo: { name: 'workast-mcp-server', version: '1.1.0' },
   });
 
   return withMcpAuth(handler, verifyApiKey, {
