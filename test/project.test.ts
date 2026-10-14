@@ -3,10 +3,15 @@ import { examples } from '@workast/sdk/mock';
 import {
   projectActivity,
   projectComment,
+  projectCreatedForm,
   projectFieldValue,
+  projectForm,
+  projectNote,
+  projectNoteDetail,
   projectRetrieveTask,
   projectSearchTask,
   projectSpace,
+  projectSpaceDetail,
   projectUser,
 } from '../src/project';
 
@@ -151,12 +156,190 @@ describe('projectUser', () => {
 });
 
 describe('projectSpace', () => {
-  it('keeps id, name, type, and link', () => {
+  it('keeps id, name, type, link, and listCount', () => {
     expect(projectSpace(examples.list)).toEqual({
       id: examples.list.id,
       name: examples.list.name,
       type: examples.list.type,
       link: examples.list.link,
+      listCount: examples.list.subLists.length,
+    });
+  });
+
+  it('includes hasReadme and listCount when the space has them', () => {
+    expect(projectSpace({
+      id: examples.list.id,
+      name: examples.list.name,
+      type: examples.list.type,
+      link: examples.list.link,
+      hasReadme: true,
+      subLists: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
+    })).toEqual({
+      id: examples.list.id,
+      name: examples.list.name,
+      type: examples.list.type,
+      link: examples.list.link,
+      hasReadme: true,
+      listCount: 2,
+    });
+  });
+
+  it('includes hasReadme false and listCount 0 for an empty space', () => {
+    expect(projectSpace({
+      ...examples.list,
+      hasReadme: false,
+      subLists: [],
+    })).toEqual({
+      id: examples.list.id,
+      name: examples.list.name,
+      type: examples.list.type,
+      link: examples.list.link,
+      hasReadme: false,
+      listCount: 0,
+    });
+  });
+});
+
+describe('projectSpaceDetail', () => {
+  it('keeps readme, defaultList, and list names', () => {
+    const space = { ...examples.list, readme: '# Welcome' };
+    const detail = projectSpaceDetail(space);
+
+    expect(detail).toEqual({
+      id: examples.list.id,
+      name: examples.list.name,
+      type: examples.list.type,
+      link: examples.list.link,
+      readme: '# Welcome',
+      defaultList: examples.list.defaultSubList,
+      lists: [{
+        id: examples.list.subLists[0].id,
+        name: examples.list.subLists[0].name,
+      }],
+    });
+    expect(detail).not.toHaveProperty('version');
+  });
+
+  it('omits readme when the space has none', () => {
+    const detail = projectSpaceDetail(examples.list);
+
+    expect(detail).toEqual({
+      id: examples.list.id,
+      name: examples.list.name,
+      type: examples.list.type,
+      link: examples.list.link,
+      defaultList: examples.list.defaultSubList,
+      lists: [{
+        id: examples.list.subLists[0].id,
+        name: examples.list.subLists[0].name,
+      }],
+    });
+    expect(detail).not.toHaveProperty('readme');
+  });
+});
+
+describe('projectForm', () => {
+  it('builds a form card with submit and edit urls', () => {
+    const doc = examples.formPage.docs[0];
+
+    expect(doc.canEdit).toBe(true);
+    expect(projectForm(doc)).toEqual({
+      id: doc.id,
+      title: doc.title,
+      description: doc.description,
+      status: doc.status,
+      privacy: doc.privacy,
+      canSubmit: doc.canSubmit,
+      canEdit: doc.canEdit,
+      submitUrl: doc.link,
+      editUrl: `https://acme.workast.com/forms/${doc.id}`,
+      space: {
+        id: doc.list.id,
+        name: doc.list.name,
+        type: doc.list.type,
+      },
+    });
+  });
+
+  it('omits editUrl when canEdit is false', () => {
+    const doc = examples.formPage.docs[0];
+    const form = projectForm({ ...doc, canEdit: false });
+
+    expect(form).toEqual({
+      id: doc.id,
+      title: doc.title,
+      description: doc.description,
+      status: doc.status,
+      privacy: doc.privacy,
+      canSubmit: doc.canSubmit,
+      canEdit: false,
+      submitUrl: doc.link,
+      space: {
+        id: doc.list.id,
+        name: doc.list.name,
+        type: doc.list.type,
+      },
+    });
+    expect(form).not.toHaveProperty('editUrl');
+    expect(form.submitUrl).toBe(doc.link);
+  });
+});
+
+describe('projectCreatedForm', () => {
+  it('builds a created-form card from JSONSchema', () => {
+    expect(projectCreatedForm(examples.formCreated)).toEqual({
+      id: examples.formCreated.id,
+      status: examples.formCreated.status,
+      privacy: examples.formCreated.privacy,
+      space: examples.formCreated.space,
+      title: examples.formCreated.JSONSchema.title,
+      description: examples.formCreated.JSONSchema.description,
+      submitUrl: examples.formCreated.link,
+      editUrl: `https://acme.workast.com/forms/${examples.formCreated.id}`,
+    });
+  });
+});
+
+describe('projectNote', () => {
+  const noteCard = {
+    id: examples.note.id,
+    title: examples.note.title,
+    link: examples.note.link,
+    createdAt: examples.note.createdAt,
+    updatedAt: examples.note.updatedAt,
+    createdBy: {
+      id: examples.note.createdBy.id,
+      name: examples.note.createdBy.name,
+    },
+  };
+
+  it('keeps the note card and drops space, list, version, and content', () => {
+    const note = projectNote(examples.note);
+
+    expect(note).toEqual(noteCard);
+    expect(note).not.toHaveProperty('space');
+    expect(note).not.toHaveProperty('list');
+    expect(note).not.toHaveProperty('version');
+    expect(note).not.toHaveProperty('content');
+  });
+
+  it('includes summary when the note has one', () => {
+    expect(projectNote({ ...examples.note, summary: 'Decisions' })).toEqual({
+      ...noteCard,
+      summary: 'Decisions',
+    });
+  });
+});
+
+describe('projectNoteDetail', () => {
+  it('adds content and space to the note card', () => {
+    expect(projectNoteDetail(examples.noteDetail)).toEqual({
+      ...projectNote(examples.noteDetail),
+      content: examples.noteDetail.content,
+      space: {
+        id: examples.noteDetail.list.id,
+        name: examples.noteDetail.list.name,
+      },
     });
   });
 });

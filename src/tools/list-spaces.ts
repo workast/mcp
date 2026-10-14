@@ -23,7 +23,7 @@ export function registerListSpaces(server: McpServer): void {
     'workast_list_spaces',
     {
       title: 'List Spaces',
-      description: 'List active spaces in Workast. Use includeArchived if you are trying to unarchive a space. Use this tool to get the space ID of a space to create a task in. Omit unused optional fields; do not send empty strings or empty arrays.',
+      description: 'List active spaces in Workast. Use this tool to get the space ID to create a task in. Each space includes hasReadme and listCount. hasReadme is true when the space has a readme document which can include extra information about the space, rules, task formatting pointers, etc. listCount is how many lists the space has. Call workast_retrieve_space to retrieve the full space detail, including the readme document and set of lists. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({
         spaces: z.array(spaceCardSchema),

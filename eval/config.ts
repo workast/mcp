@@ -1,6 +1,11 @@
 import { POST } from '../app/mcp/route.js';
 import { createWorkast } from '../src/workast.js';
-import { cleanupEvalWrites, ensureSeedSpaces, reopenEvalTasks } from './workspace.js';
+import {
+  cleanupEvalWrites,
+  ensureBugReportSpace,
+  ensureSeedSpaces,
+  reopenEvalTasks,
+} from './workspace.js';
 
 function evalWorkast() {
   const apiKey = process.env.WORKAST_API_KEY;
@@ -28,6 +33,7 @@ export default {
   async before() {
     const workast = evalWorkast();
     await ensureSeedSpaces(workast);
+    await ensureBugReportSpace(workast);
     await reopenEvalTasks(workast);
   },
   async after() {
