@@ -77,6 +77,94 @@ export function projectSpace(list: Fat) {
     name: list.name,
     type: list.type,
     link: list.link,
+    hasReadme: list.hasReadme,
+    listCount: Array.isArray(list.subLists) ? list.subLists.length : 0,
+  });
+}
+
+function formUrls(link: unknown, id: unknown, includeEdit: boolean) {
+  const submitUrl = typeof link === 'string' ? link : undefined;
+  if (!includeEdit || typeof link !== 'string' || typeof id !== 'string') {
+    return { submitUrl };
+  }
+  const url = new URL(link);
+  url.pathname = `/forms/${id}`;
+  url.search = '';
+  url.hash = '';
+  return { submitUrl, editUrl: url.toString() };
+}
+
+export function projectSpaceDetail(list: Fat) {
+  return omitUndefined({
+    id: list.id,
+    name: list.name,
+    type: list.type,
+    link: list.link,
+    readme: typeof list.readme === 'string' ? list.readme : undefined,
+    defaultList: list.defaultSubList,
+    lists: Array.isArray(list.subLists)
+      ? list.subLists.map((subList: Fat) => ({ id: subList.id, name: subList.name }))
+      : undefined,
+  });
+}
+
+export function projectForm(form: Fat) {
+  const { submitUrl, editUrl } = formUrls(form.link, form.id, form.canEdit === true);
+  const list = form.list;
+  return omitUndefined({
+    id: form.id,
+    title: form.title,
+    description: form.description,
+    status: form.status,
+    privacy: form.privacy,
+    canSubmit: form.canSubmit,
+    canEdit: form.canEdit,
+    submitUrl,
+    editUrl,
+    space: list != null && typeof list === 'object'
+      ? omitUndefined({ id: list.id, name: list.name, type: list.type })
+      : undefined,
+  });
+}
+
+export function projectCreatedForm(form: Fat) {
+  const { submitUrl, editUrl } = formUrls(form.link, form.id, true);
+  const schema = form.JSONSchema;
+  return omitUndefined({
+    id: form.id,
+    status: form.status,
+    privacy: form.privacy,
+    space: typeof form.space === 'string' ? form.space : undefined,
+    title: schema?.title,
+    description: schema?.description,
+    submitUrl,
+    editUrl,
+  });
+}
+
+export function projectNote(note: Fat) {
+  const createdBy = note.createdBy;
+  return omitUndefined({
+    id: note.id,
+    title: note.title,
+    summary: typeof note.summary === 'string' ? note.summary : undefined,
+    link: note.link,
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+    createdBy: createdBy != null && typeof createdBy === 'object'
+      ? { id: createdBy.id, name: createdBy.name }
+      : undefined,
+  });
+}
+
+export function projectNoteDetail(note: Fat) {
+  const list = note.list;
+  return omitUndefined({
+    ...projectNote(note),
+    content: note.content,
+    space: list != null && typeof list === 'object'
+      ? omitUndefined({ id: list.id, name: list.name })
+      : undefined,
   });
 }
 
@@ -501,6 +589,70 @@ export const spaceCardSchema = z.object({
   name: z.string(),
   type: z.string().optional(),
   link: z.string().optional(),
+  hasReadme: z.boolean().optional(),
+  listCount: z.number(),
+});
+
+export const spaceDetailCardSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string().optional(),
+  link: z.string().optional(),
+  readme: z.string().optional(),
+  defaultList: z.string().optional(),
+  lists: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+  })).optional(),
+});
+
+export const formCardSchema = z.object({
+  id: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  status: z.string().optional(),
+  privacy: z.string().optional(),
+  canSubmit: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  submitUrl: z.string().optional(),
+  editUrl: z.string().optional(),
+  space: z.object({
+    id: z.string(),
+    name: z.string().optional(),
+    type: z.string().optional(),
+  }).optional(),
+});
+
+export const createdFormCardSchema = z.object({
+  id: z.string(),
+  status: z.string().optional(),
+  privacy: z.string().optional(),
+  space: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  submitUrl: z.string().optional(),
+  editUrl: z.string().optional(),
+});
+
+export const noteCardSchema = z.object({
+  id: z.string(),
+  title: z.string().optional(),
+  summary: z.string().optional(),
+  link: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  createdBy: z.object({
+    id: z.string(),
+    name: z.string().optional(),
+  }).optional(),
+});
+
+export const noteDetailCardSchema = noteCardSchema.extend({
+  content: z.string().optional(),
+  space: z.object({
+    id: z.string(),
+    name: z.string().optional(),
+  }).optional(),
 });
 
 export const fieldValueCardSchema = z.object({

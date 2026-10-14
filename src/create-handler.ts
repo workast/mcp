@@ -7,6 +7,8 @@ import { registerAddSpaceParticipants } from './tools/add-space-participants';
 import { registerCompleteTasks } from './tools/complete-tasks';
 import { registerCreateComment } from './tools/create-comment';
 import { registerCreateField } from './tools/create-field';
+import { registerCreateForm } from './tools/create-form';
+import { registerCreateNote } from './tools/create-note';
 import { registerCreatePersonalTasks } from './tools/create-personal-tasks';
 import { registerCreateSpace } from './tools/create-space';
 import { registerCreateSublist } from './tools/create-sublist';
@@ -14,15 +16,21 @@ import { registerCreateSubtasks } from './tools/create-subtasks';
 import { registerCreateTasks } from './tools/create-tasks';
 import { registerListCoworkers } from './tools/list-coworkers';
 import { registerListFields } from './tools/list-fields';
+import { registerListForms } from './tools/list-forms';
 import { registerListMeetings } from './tools/list-meetings';
+import { registerListNotes } from './tools/list-notes';
 import { registerListReports } from './tools/list-reports';
 import { registerListSpaceParticipants } from './tools/list-space-participants';
 import { registerListSpaces } from './tools/list-spaces';
 import { registerListTaskActivity } from './tools/list-task-activity';
 import { registerRetrieveMeeting } from './tools/retrieve-meeting';
+import { registerRetrieveNote } from './tools/retrieve-note';
 import { registerRetrieveReport } from './tools/retrieve-report';
+import { registerRetrieveSpace } from './tools/retrieve-space';
 import { registerRetrieveTasks } from './tools/retrieve-tasks';
 import { registerSearchTasks } from './tools/search-tasks';
+import { registerUpdateNote } from './tools/update-note';
+import { registerUpdateSpaceReadme } from './tools/update-space-readme';
 import { registerUpdateTasks } from './tools/update-tasks';
 
 export function createHandler() {
@@ -57,7 +65,15 @@ export function createHandler() {
     );
 
     registerListSpaces(server);
+    registerRetrieveSpace(server);
+    registerUpdateSpaceReadme(server);
     registerCreateSpace(server);
+    registerListForms(server);
+    registerCreateForm(server);
+    registerListNotes(server);
+    registerRetrieveNote(server);
+    registerCreateNote(server);
+    registerUpdateNote(server);
     registerAddSpaceParticipants(server);
     registerListSpaceParticipants(server);
     registerCreateSublist(server);

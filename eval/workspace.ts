@@ -15,7 +15,15 @@ export const CLEANUP_TASK_SUBSTR = [
   'updated proposal to Acme',
   'pricing page copy',
   'Revamp customer onboarding',
+  'login is not working',
 ] as const;
+
+export const BUG_REPORT_SPACE = 'McpEval Bug Reports';
+
+const BUG_REPORT_README = [
+  'When creating a task in this space, start the summary with [Bug].',
+  'The description must say where it happened, what you expected, and what you saw instead.',
+].join(' ');
 
 const RESET_TASK_IDS = [
   '593de2d2ca02a852121c95450328372c',
@@ -104,6 +112,19 @@ export async function ensureSeedSpaces(workast: Workast): Promise<void> {
     const existing = await listExactName(workast, name);
     if (existing.length === 0) {
       await workast.lists.create({ name });
+    }
+  }
+}
+
+export async function ensureBugReportSpace(workast: Workast): Promise<void> {
+  const existing = await listExactName(workast, BUG_REPORT_SPACE);
+  if (existing.length === 0) {
+    await workast.lists.create({ name: BUG_REPORT_SPACE, readme: BUG_REPORT_README });
+    return;
+  }
+  for (const space of existing) {
+    if (space.id) {
+      await workast.lists.update(space.id, { readme: BUG_REPORT_README });
     }
   }
 }

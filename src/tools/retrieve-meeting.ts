@@ -1,4 +1,4 @@
-import type { MeetingDetail } from '@workast/sdk';
+import type { MeetingResource } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { meetingCardSchema, projectMeeting } from '../project';
@@ -25,7 +25,7 @@ export function registerRetrieveMeeting(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_meeting', async (workast) => {
-      const meeting: MeetingDetail = await workast.meetings.retrieve(args.meetingId);
+      const meeting: MeetingResource = await workast.meetings.retrieve(args.meetingId);
       if (!args.includeTranscript) {
         return projectMeeting(meeting);
       }

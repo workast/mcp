@@ -5,7 +5,15 @@ import { callJsonRpc, setupWorkastMock } from './helpers';
 const EXPECTED_TOOLS = [
   'workast_ping',
   'workast_list_spaces',
+  'workast_retrieve_space',
+  'workast_update_space_readme',
   'workast_create_space',
+  'workast_list_forms',
+  'workast_create_form',
+  'workast_list_notes',
+  'workast_retrieve_note',
+  'workast_create_note',
+  'workast_update_note',
   'workast_add_space_participants',
   'workast_list_space_participants',
   'workast_create_sublist',
@@ -56,7 +64,7 @@ describe('server identity', () => {
     });
   });
 
-  it('lists exactly the 23 workast_ tools', async () => {
+  it('lists exactly the 31 workast_ tools', async () => {
     const POST = createHandler();
     const { status, message } = await callJsonRpc(POST, 'tools/list');
 
@@ -65,6 +73,6 @@ describe('server identity', () => {
     const result = message.result as ToolsListResult;
     const tools = result.tools ?? [];
     expect(tools.map((tool) => tool.name).sort()).toEqual([...EXPECTED_TOOLS].sort());
-    expect(tools).toHaveLength(23);
+    expect(tools).toHaveLength(31);
   });
 });

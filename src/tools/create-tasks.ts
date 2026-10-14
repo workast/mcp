@@ -10,7 +10,7 @@ const taskSchema = z.object({
   assignedTo: z.array(z.string()).max(50).optional()
     .describe('User IDs to assign (not names or emails). Use workast_list_coworkers or workast_list_space_participants to look up IDs.'),
   description: z.string().optional()
-    .describe('Longer task details. Only set when extra context is needed beyond the summary.'),
+    .describe('Longer task details. GitHub Flavored Markdown without images, raw HTML, or mentions. Use this to provide extra context when needed beyond the summary.'),
   startDate: z.string().optional().describe('Start date as YYYY-MM-DD'),
   dueDate: z.string().optional()
     .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),

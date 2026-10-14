@@ -161,3 +161,21 @@
     My manager asked me to chase these two up — where does each one stand? https://open.workast.app/812268cc43782895dd671c788576207a/task/c4e19f7a3b25d8061e9a4c72f8b3d514 and https://open.workast.app/812268cc43782895dd671c788576207a/task/5d803b6e921cf47a8e25b1d09c6f43a7
   judge: >-
     Two task lookups are made, using the IDs "c4e19f7a3b25d8061e9a4c72f8b3d514" and "5d803b6e921cf47a8e25b1d09c6f43a7" — the segments after /task/ in each URL. A not-found result for either lookup is a pass. Score the tool calls, not the wording of the final response. Fail only if a lookup is missing, the wrong ID is used, or a status is invented for a task the lookup did not return.
+
+- name: customer-request-form
+  prompt: >-
+    In the McpEval Product space, add a form called "McpEval Customer Request" so customers can send us feature requests. Ask for their name, email, and feedback. If that form is already there, don't create another one.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Product" and forms are listed. If a form titled "McpEval Customer Request" already exists, no new form is created and the final response says it already exists. If it does not exist, workast_create_form is called in that space with that title and questions for name, email, and feedback. A second form with the same title, or a form created in a different space, does not pass. If the space does not exist, the final response says so.
+
+- name: bug-report-from-readme
+  prompt: >-
+    Create a task in the bug report space. The login is not working on the website.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Bug Reports". workast_retrieve_space is called on that space before the task is created, and the created task follows that space's readme: the summary starts with [Bug], and the description says where it happened, what was expected, and what happened instead, about the website login failure. Creating the task without retrieving the space, or ignoring the readme, does not pass. If the space does not exist, the final response says so and no task is created in an unrelated space.
+
+- name: bug-report-note
+  prompt: >-
+    In the McpEval Bug Reports space, list the notes and add one about best practices when reporting a bug.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Bug Reports". Notes in that space are listed with workast_list_notes, and a note about best practices when reporting a bug is created there with workast_create_note. If the space does not exist, the final response says so and no note is created in an unrelated space.

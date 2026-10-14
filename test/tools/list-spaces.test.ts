@@ -13,6 +13,7 @@ const spaceCard = {
   name: listEnumerate.name,
   type: listEnumerate.type,
   link: listEnumerate.link,
+  listCount: listEnumerate.subLists.length,
 };
 
 describe('workast_list_spaces tool', () => {
@@ -209,6 +210,41 @@ describe('workast_list_spaces tool', () => {
       {
         method: 'lists.list',
         args: [{ limit: 50, skip: 0 }],
+      },
+    ]);
+  });
+
+  it('includes hasReadme and listCount when the space has them', async () => {
+    const space = {
+      ...listEnumerate,
+      hasReadme: true,
+      subLists: [
+        ...listEnumerate.subLists,
+        { id: listEnumerate.subLists[0].id, name: 'Features' },
+      ],
+    };
+    mock.lists.list.on({ statusIs: 'active', limit: 50, skip: 0 }).resolves([space]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {});
+
+    expect(status).toBe(200);
+    expectToolData(message, {
+      spaces: [{
+        ...spaceCard,
+        hasReadme: true,
+        listCount: 2,
+      }],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+        method: 'lists.list',
+        args: [{ statusIs: 'active', limit: 50, skip: 0 }],
       },
     ]);
   });
