@@ -54,7 +54,7 @@ Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workas
 | `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
 | `workast_list_space_participants` | List space participants (`spaceId`) |
 | `workast_create_sublist` | Create a sublist (`spaceId`, `name`) |
-| `workast_list_coworkers` | List teammates (`limit`, `offset`) |
+| `workast_list_coworkers` | List teammates (optional `name`, `email`, `role`, `limit`, `offset`) |
 | `workast_about_me` | Current user and team |
 | `workast_search_tasks` | Search tasks with filters (`spaceId`, `statusIs`, `limit`, `skip`, …) |
 | `workast_retrieve_tasks` | Get tasks (`taskIds[]` or `shortIds[]`) |
