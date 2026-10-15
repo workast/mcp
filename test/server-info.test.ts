@@ -47,7 +47,7 @@ type InitializeResult = {
 describe('server identity', () => {
   setupWorkastMock();
 
-  it('returns workast-mcp-server 1.1.0 from initialize', async () => {
+  it('returns workast-mcp-server 1.1.1 from initialize', async () => {
     const POST = createHandler();
     const { status, message } = await callJsonRpc(POST, 'initialize', {
       protocolVersion: '2025-03-26',
@@ -60,7 +60,7 @@ describe('server identity', () => {
     const result = message.result as InitializeResult;
     expect(result.serverInfo).toEqual({
       name: 'workast-mcp-server',
-      version: '1.1.0',
+      version: '1.1.1',
     });
   });
 
