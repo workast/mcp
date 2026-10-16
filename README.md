@@ -13,6 +13,10 @@ OAuth discovery uses RFC 9728 Protected Resource Metadata at `/.well-known/oauth
 
 A workspace-scoped API key locks tools to that workspace. Create a key in Workast under **Preferences → API**.
 
+## Skill
+
+The server serves one Agent Skill, `workast`, from `skills/workast/SKILL.md` at `skill://workast/SKILL.md`. Initialize advertises the `io.modelcontextprotocol/skills` extension. Clients list it with `skills/list`, fetch one entry with `skills/get`, and read the file with `resources/read`.
+
 ## Environment
 
 | Variable | Values | Default |

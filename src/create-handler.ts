@@ -2,6 +2,7 @@ import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import { z } from 'zod';
 import { getMcpPublicOrigin } from './auth/protected-resource';
 import { verifyApiKey } from './auth/verify-api-key';
+import { registerWorkastSkill } from './skill';
 import { registerAboutMe } from './tools/about-me';
 import { registerAddSpaceParticipants } from './tools/add-space-participants';
 import { registerCompleteTasks } from './tools/complete-tasks';
@@ -87,8 +88,10 @@ export function createHandler() {
     registerCreateField(server);
     registerListReports(server);
     registerRetrieveReport(server);
+    registerWorkastSkill(server);
   }, {
     serverInfo: { name: 'workast-mcp-server', version: '1.1.1' },
+    instructions: 'Load the Workast skill at skill://workast/SKILL.md when the user mentions Workast, pastes a Workast URL, or wants to create, assign, search, or complete work.',
   });
 
   return withMcpAuth(handler, verifyApiKey, {
