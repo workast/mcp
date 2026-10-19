@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { POST } from '../app/mcp/route.js';
 import { createWorkast } from '../src/workast.js';
 import {
@@ -7,6 +9,15 @@ import {
   reopenEvalTasks,
 } from './workspace.js';
 
+function workastSkillBody(): string {
+  const text = readFileSync(join(process.cwd(), 'skills/workast/SKILL.md'), 'utf8');
+  const end = text.startsWith('---\n') ? text.indexOf('\n---\n', 4) : -1;
+  if (end === -1) {
+    throw new Error('Workast skill frontmatter is missing');
+  }
+  return text.slice(end + '\n---\n'.length).trim();
+}
+
 function evalWorkast() {
   const apiKey = process.env.WORKAST_API_KEY;
   if (!apiKey) {
@@ -15,15 +26,22 @@ function evalWorkast() {
   return createWorkast(apiKey);
 }
 
+const today = new Date().toLocaleDateString('en-GB', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+const systemPrompt = [
+  `You are a Workast assistant. Today is ${today}.`,
+  workastSkillBody(),
+].join('\n\n');
+
 export default {
   model: 'gateway/openai/gpt-5.6-sol',
   threshold: 0.8,
-  systemPrompt: `You are a Workast assistant. Today is ${new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })}.`,
+  systemPrompt,
   mcp: {
     url: 'http://localhost/mcp',
     fetch: (input: string | URL, init?: RequestInit) =>

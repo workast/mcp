@@ -68,8 +68,8 @@ OAuth (client follows the 401 challenge to workast-auth):
 | `workast_create_space` | Create a space (`name`, optional `participants`, `privacy`) |
 | `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
 | `workast_list_space_participants` | List space participants (`spaceId`) |
-| `workast_create_sublist` | Create a sublist (`spaceId`, `name`) |
-| `workast_list_coworkers` | List teammates (optional `name`, `email`, `role`, `limit`, `offset`) |
+| `workast_update_space` | Update a space (`name`, `readme`, `defaultList`, lists add/rename/remove, fields add/remove) |
+| `workast_list_coworkers` | List teammates (`limit`, `offset`) |
 | `workast_about_me` | Current user and team |
 | `workast_search_tasks` | Search tasks with filters (`spaceId`, `statusIs`, `limit`, `skip`, …) |
 | `workast_retrieve_tasks` | Get tasks (`taskIds[]` or `shortIds[]`) |
@@ -84,6 +84,7 @@ OAuth (client follows the 401 challenge to workast-auth):
 | `workast_retrieve_meeting` | Get a meeting (`meetingId`, optional `includeTranscript`) |
 | `workast_list_fields` | List custom fields (optional `spaceId`) |
 | `workast_create_field` | Create a field and enable it on a space (`spaceId`, `name`, `type`, optional `options`) |
+| `workast_update_field` | Update a custom field (`fieldId`, optional `name`, `description`, `options`) |
 | `workast_list_reports` | List saved reports (optional `home`, `limit`, `skip`) |
 | `workast_retrieve_report` | Get a report and its tasks (`reportId`, `getTasks` default 25) |
 
@@ -117,7 +118,7 @@ nvm use
 npm run eval
 ```
 
-The runner loads `eval/config.ts` and `eval/tasks.yaml`. The config sets a current-date `systemPrompt`. `before` archives active spaces whose names contain `McpEval`, `holiday campaign`, or `comp planning` (skipping spaces the token is not a participant of), seeds `McpEval Marketing`, `McpEval Product`, `McpEval Design`, and `McpEval Bugs` when missing, and reopens the three short-ID batch tasks. `after` archives those same spaces and deletes the write-eval tasks. Add tasks there as you add tools.
+The runner loads `eval/config.ts` and `eval/tasks.yaml`. The config sets a current-date `systemPrompt` that includes the Workast skill body. `before` archives active spaces whose names contain `McpEval`, `holiday campaign`, or `comp planning` (skipping spaces the token is not a participant of), seeds `McpEval Marketing`, `McpEval Product`, `McpEval Design`, and `McpEval Bugs` when missing, and reopens the three short-ID batch tasks. `after` archives those same spaces and deletes the write-eval tasks. Add tasks there as you add tools.
 
 ## Contributing
 

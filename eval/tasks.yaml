@@ -5,7 +5,6 @@
 # tasks by short ID (TQ7ZK) or pasted URL — never by raw API IDs, which
 # users only ever see inside URLs. All the precision lives in `judge`: a
 # judge model scores the tool-call transcript against the expected outcome.
-# Only `ping` uses exact-match `expected`.
 #
 # The scope is tool and argument selection, not API validation, so prompts
 # never ask the agent to verify its own writes. Where a prompt refers to
@@ -21,8 +20,9 @@
 
 - name: ping
   prompt: >-
-    Check that your connection to Workast is working. Reply with the ping tool's exact JSON object, including braces — not just the boolean field. Omit unused optional fields; do not send empty strings or empty arrays.
-  expected: '{"ok":true}'
+    Check that your connection to Workast is working.
+  judge: >-
+    workast_ping is called. The final response says the connection works. The response does not need to include the tool's JSON. Reporting a failure, or not calling workast_ping, does not pass.
   required: true
 
 - name: quick-capture
@@ -35,7 +35,7 @@
   prompt: >-
     We're spinning up the Q4 holiday campaign. Create a space named "McpEval Q4 Holiday Campaign" with lists for Content, Paid Ads, and Email, and add the two kickoff tasks: brief the design team, due next Monday, and lock the campaign budget, due end of the month.
   judge: >-
-    A space named "McpEval Q4 Holiday Campaign" is created. Three sublists named Content, Paid Ads, and Email are created in it. Two tasks are created in that space: one about briefing the design team due approximately next Monday, and one about locking the campaign budget due approximately the end of the current month. Reusing an existing space with a different name does not pass.
+    A space named "McpEval Q4 Holiday Campaign" is created with workast_create_space. That space ends with exactly the lists Content, Paid Ads, and Email, changed with workast_update_space. Renaming the default list to one of those names is correct, and the other names are added with lists.add. Two tasks are created in that space: one about briefing the design team due approximately next Monday, and one about locking the campaign budget due approximately the end of the current month. Reusing an existing space with a different name, leaving an extra list such as "Open Tasks", or changing the lists with a tool other than workast_update_space, does not pass.
 
 - name: private-space
   prompt: >-
@@ -179,3 +179,8 @@
     In the McpEval Bug Reports space, list the notes and add one about best practices when reporting a bug.
   judge: >-
     Spaces are listed to find one matching "McpEval Bug Reports". Notes in that space are listed with workast_list_notes, and a note about best practices when reporting a bug is created there with workast_create_note. If the space does not exist, the final response says so and no note is created in an unrelated space.
+- name: add-review-list
+  prompt: >-
+    In the McpEval Product space, add a list called "McpEval Review" for work that's waiting on feedback. If that list is already there, leave it.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Product", and that space is retrieved before any list is added. If no list named "McpEval Review" is already on it, workast_update_space is called on that space with lists.add containing that name. If the list is already there, no new list is added and the final response says so. If the space does not exist, the final response says so. Creating a different space, or adding the list with a tool other than workast_update_space, does not pass.

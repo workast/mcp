@@ -10,9 +10,9 @@ const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
 const size = bytes.byteLength;
 const text = bytes.toString('utf8');
 
-const FOLDED_DESCRIPTION = 'Manage Workast spaces, tasks, notes, forms, meetings, and reports. Use when the user mentions Workast, pastes a Workast URL, or wants to create, assign, search, or complete work. Workast is the system of record for work done by people and agents.\n';
+const FOLDED_DESCRIPTION = 'Manage Workast spaces, lists, tasks, notes, forms, meetings, and reports. Use when the user mentions Workast, pastes a workast.com or workast.app URL, gives a short task id, or asks to create, assign, search, complete, or comment on work in Workast.\n';
 
-const INSTRUCTIONS = 'Load the Workast skill at skill://workast/SKILL.md when the user mentions Workast, pastes a Workast URL, or wants to create, assign, search, or complete work.';
+const INSTRUCTIONS = 'Load the Workast skill at skill://workast/SKILL.md when the user mentions Workast, pastes a workast.com or workast.app URL, gives a short task id, or asks to create, assign, search, complete, or comment on work in Workast.';
 
 const skillEntry = {
   uri: 'skill://workast/SKILL.md',
