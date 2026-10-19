@@ -8,6 +8,8 @@ import { runWorkast } from '../run-tool';
 const inputSchema = z.object({
   type: z.enum(['direct', 'group', 'personal', 'template']).optional()
     .describe('Filter by space type'),
+  name: z.string().min(1).optional()
+    .describe('Case-insensitive substring of the stored space name'),
   participants: z.array(z.string()).max(50).optional()
     .describe('Filter by participant user IDs'),
   includeArchived: z.boolean().optional()
@@ -23,7 +25,7 @@ export function registerListSpaces(server: McpServer): void {
     'workast_list_spaces',
     {
       title: 'List Spaces',
-      description: 'List active spaces in Workast. Use this tool to get the space ID to create a task in. Each space includes hasReadme and listCount. hasReadme is true when the space has a readme document which can include extra information about the space, rules, task formatting pointers, etc. listCount is how many lists the space has. Call workast_retrieve_space to retrieve the full space detail, including the readme document and set of lists. Omit unused optional fields; do not send empty strings or empty arrays.',
+      description: 'List active spaces in Workast. Use this tool to get the space ID to create a task in. name filters by a case-insensitive substring of the stored space name. Pass it when looking up a space by name. The API match is not exact, so compare each returned name to the requested name. Each space includes hasReadme and listCount. hasReadme is true when the space has a readme document which can include extra information about the space, rules, task formatting pointers, etc. listCount is how many lists the space has. Call workast_retrieve_space to retrieve the full space detail, including the readme document and set of lists. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({
         spaces: z.array(spaceCardSchema),
@@ -43,6 +45,7 @@ export function registerListSpaces(server: McpServer): void {
         limit: args.limit,
         skip: args.skip,
         type: args.type,
+        name: args.name,
         participants: args.participants,
         statusIs: args.includeArchived ? undefined : 'active',
       }) as ListSearchQuery;

@@ -31,8 +31,8 @@ const inputSchema = z.object({
     .describe('Filter tasks created on or after this ISO date'),
   spaceId: z.string().optional()
     .describe('Filter by space ID'),
-  sublist: z.array(z.string()).max(50).optional()
-    .describe('Filter by sublist name'),
+  list: z.array(z.string()).max(50).optional()
+    .describe('Filter by list name'),
   completedAfter: z.string().optional()
     .describe('Filter tasks completed on or after this ISO date'),
   tags: z.array(z.string()).max(50).optional()
@@ -115,8 +115,8 @@ function compilePredicates(args: z.infer<typeof inputSchema>): Predicate[] {
   if (args.createdAfter) {
     predicates.push(datePredicate('createdAt', 'gte', args.createdAfter));
   }
-  if (args.sublist?.length) {
-    predicates.push(eqOrGroup('string', 'subListName', args.sublist));
+  if (args.list?.length) {
+    predicates.push(eqOrGroup('string', 'subListName', args.list));
   }
   if (args.completedAfter) {
     predicates.push(datePredicate('doneAt', 'gte', args.completedAfter));

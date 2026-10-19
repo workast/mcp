@@ -40,7 +40,7 @@ const optionalTaskInput = {
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
   dueDateTime: '17:00:00',
-  subListId: subList.id,
+  listId: subList.id,
   tags: [tag.id],
   meetingId: meeting.id,
   fields: [{ id: customField.id, value: 'High' }],

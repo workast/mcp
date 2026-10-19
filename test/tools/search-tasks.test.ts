@@ -172,9 +172,9 @@ describe('workast_search_tasks tool', () => {
     );
   });
 
-  it('compiles sublist to a subListName eq predicate', async () => {
+  it('compiles list to a subListName eq predicate', async () => {
     await expectSearch(
-      { sublist: [subList.name] },
+      { list: [subList.name] },
       [{ type: 'string', attribute: 'subListName', comparison: 'eq', value: subList.name }],
     );
   });

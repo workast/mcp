@@ -16,8 +16,8 @@ const taskSchema = z.object({
     .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),
   dueDateTime: z.string().optional()
     .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
-  subListId: z.string().optional()
-    .describe('Sublist ID to place the task in'),
+  listId: z.string().optional()
+    .describe('List id from workast_retrieve_space. Omit it to land on the default list.'),
   tags: z.array(z.string()).max(50).optional()
     .describe('Tag IDs to add (not names). Use IDs from existing tasks or search results.'),
   meetingId: z.string().optional()
@@ -55,12 +55,12 @@ export function registerCreateTasks(server: McpServer): void {
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_tasks', async (workast) => {
       const created: ReturnType<typeof projectSearchTask>[] = [];
-      for (const [i, { summary, ...rest }] of args.tasks.entries()) {
+      for (const [i, { summary, listId, ...rest }] of args.tasks.entries()) {
         try {
           created.push(projectSearchTask(
             await workast.tasks.create(
               args.spaceId,
-              omitEmpty({ text: summary, ...rest }) as TaskCreate,
+              omitEmpty({ text: summary, ...rest, subListId: listId }) as TaskCreate,
             ),
           ));
         } catch (error) {

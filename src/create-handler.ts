@@ -2,6 +2,7 @@ import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import { z } from 'zod';
 import { getMcpPublicOrigin } from './auth/protected-resource';
 import { verifyApiKey } from './auth/verify-api-key';
+import { registerWorkastSkill } from './skill';
 import { registerAboutMe } from './tools/about-me';
 import { registerAddSpaceParticipants } from './tools/add-space-participants';
 import { registerCompleteTasks } from './tools/complete-tasks';
@@ -11,7 +12,6 @@ import { registerCreateForm } from './tools/create-form';
 import { registerCreateNote } from './tools/create-note';
 import { registerCreatePersonalTasks } from './tools/create-personal-tasks';
 import { registerCreateSpace } from './tools/create-space';
-import { registerCreateSublist } from './tools/create-sublist';
 import { registerCreateSubtasks } from './tools/create-subtasks';
 import { registerCreateTasks } from './tools/create-tasks';
 import { registerListCoworkers } from './tools/list-coworkers';
@@ -31,16 +31,11 @@ import { registerRetrieveTasks } from './tools/retrieve-tasks';
 import { registerSearchTasks } from './tools/search-tasks';
 import { registerUpdateNote } from './tools/update-note';
 import { registerUpdateSpaceReadme } from './tools/update-space-readme';
+import { registerUpdateField } from './tools/update-field';
+import { registerUpdateSpace } from './tools/update-space';
 import { registerUpdateTasks } from './tools/update-tasks';
 
 export function createHandler() {
-  const authMode = process.env.MCP_AUTH_MODE ?? 'agent';
-  const authUrl = process.env.WORKAST_AUTH_URL;
-
-  if (authMode === 'user' && !authUrl) {
-    throw new Error('WORKAST_AUTH_URL is required when MCP_AUTH_MODE=user');
-  }
-
   const handler = createMcpHandler((server) => {
     server.registerTool(
       'workast_ping',
@@ -76,7 +71,7 @@ export function createHandler() {
     registerUpdateNote(server);
     registerAddSpaceParticipants(server);
     registerListSpaceParticipants(server);
-    registerCreateSublist(server);
+    registerUpdateSpace(server);
     registerListCoworkers(server);
     registerAboutMe(server);
     registerSearchTasks(server);
@@ -92,10 +87,13 @@ export function createHandler() {
     registerRetrieveMeeting(server);
     registerListFields(server);
     registerCreateField(server);
+    registerUpdateField(server);
     registerListReports(server);
     registerRetrieveReport(server);
+    registerWorkastSkill(server);
   }, {
     serverInfo: { name: 'workast-mcp-server', version: '1.1.1' },
+    instructions: 'Load the Workast skill at skill://workast/SKILL.md when the user mentions Workast, pastes a workast.com or workast.app URL, gives a short task id, or asks to create, assign, search, complete, or comment on work in Workast.',
   });
 
   return withMcpAuth(handler, verifyApiKey, {

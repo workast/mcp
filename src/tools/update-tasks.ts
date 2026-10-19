@@ -14,7 +14,7 @@ const inputSchema = z.object({
     .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),
   dueDateTime: z.string().optional()
     .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
-  subListId: z.string().optional().describe('Sublist ID to move the task to'),
+  listId: z.string().optional().describe('List id to move the task to'),
   fields: z
     .array(z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
@@ -42,10 +42,12 @@ export function registerUpdateTasks(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_tasks', async (workast) => {
-      const { taskIds, summary, ...rest } = args;
-      const patch = omitEmpty(
-        summary === undefined ? rest : { text: summary, ...rest },
-      ) as TaskPatch;
+      const { taskIds, summary, listId, ...rest } = args;
+      const patch = omitEmpty({
+        text: summary,
+        ...rest,
+        subListId: listId,
+      }) as TaskPatch;
       const succeeded = [];
 
       for (const [i, taskId] of taskIds.entries()) {

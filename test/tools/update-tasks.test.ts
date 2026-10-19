@@ -8,7 +8,7 @@ import {
   setupWorkastMock,
 } from '../helpers';
 
-const { customField, task, user } = examples;
+const { customField, subList, task, user } = examples;
 
 const patchInput = {
   summary: task.text,
@@ -55,7 +55,7 @@ describe('workast_update_tasks tool', () => {
       startDate: '',
       dueDate: '2026-09-28',
       dueDateTime: '',
-      subListId: '',
+      listId: '',
       fields: [],
     });
 
@@ -64,6 +64,23 @@ describe('workast_update_tasks tool', () => {
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.update', args: [task.id, { dueDate: '2026-09-28' }] },
+    ]);
+  });
+
+  it('moves a task onto a list', async () => {
+    mock.tasks.update.on(task.id, { subListId: subList.id }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      listId: subList.id,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, { subListId: subList.id }] },
     ]);
   });
 
