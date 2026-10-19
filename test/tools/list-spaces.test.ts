@@ -274,4 +274,78 @@ describe('workast_list_spaces tool', () => {
       next_skip: 2,
     });
   });
+
+  it('forwards name and returns every API match', async () => {
+    mock.lists.list.on({
+      name: 'Marketing',
+      statusIs: 'active',
+      limit: 50,
+      skip: 0,
+    }).resolves([
+      listEnumerate,
+      { ...listEnumerate, id: `${listEnumerate.id}-2`, name: 'McpEval Marketing' },
+    ]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
+      name: 'Marketing',
+    });
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+        method: 'lists.list',
+        args: [{ name: 'Marketing', statusIs: 'active', limit: 50, skip: 0 }],
+      },
+    ]);
+    expectToolData(message, {
+      spaces: [
+        spaceCard,
+        { ...spaceCard, id: `${listEnumerate.id}-2`, name: 'McpEval Marketing' },
+      ],
+      count: 2,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+  });
+
+  it('forwards name and type', async () => {
+    mock.lists.list.on({
+      name: 'Marketing',
+      type: 'group',
+      statusIs: 'active',
+      limit: 50,
+      skip: 0,
+    }).resolves([listEnumerate]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_list_spaces', {
+      name: 'Marketing',
+      type: 'group',
+    });
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      {
+        method: 'lists.list',
+        args: [{
+          name: 'Marketing',
+          type: 'group',
+          statusIs: 'active',
+          limit: 50,
+          skip: 0,
+        }],
+      },
+    ]);
+    expectToolData(message, {
+      spaces: [spaceCard],
+      count: 1,
+      skip: 0,
+      has_more: false,
+      next_skip: null,
+    });
+  });
 });

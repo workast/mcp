@@ -64,7 +64,7 @@ OAuth (client follows the 401 challenge to workast-auth):
 | Tool | Description |
 | --- | --- |
 | `workast_ping` | Health check (requires auth) |
-| `workast_list_spaces` | List active spaces (optional `type`, `participants`, `includeArchived`, `limit`, `skip`) |
+| `workast_list_spaces` | List active spaces (optional `name`, `type`, `participants`, `includeArchived`, `limit`, `skip`) |
 | `workast_create_space` | Create a space (`name`, optional `participants`, `privacy`) |
 | `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
 | `workast_list_space_participants` | List space participants (`spaceId`) |
