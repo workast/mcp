@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "workast": {
+      "type": "http",
+      "url": "https://mcp.workast.com/mcp",
+      "oauth": true
+    }
+  }
+}

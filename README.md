@@ -2,52 +2,21 @@
 
 [![CI](https://github.com/workast/mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/workast/mcp/actions/workflows/ci.yml)
 
-MCP host for [Workast](https://workast.com/). Exposes Model Context Protocol tools over Streamable HTTP at `https://mcp.workast.com/mcp`.
+Organize work with your team and agents.
 
-Authenticate with either:
+Ask Cursor, Claude, or ChatGPT for a task, a meeting follow-up, or a report. The work lands in the spaces your team already uses.
 
-- A Workast API key via `Authorization: Bearer …`
-- OAuth at workast-auth: connect with no Authorization header; the client follows the 401 challenge to workast-auth, then sends `Authorization: Bearer wat::…`
+## Add Workast
 
-OAuth discovery uses RFC 9728 Protected Resource Metadata at `/.well-known/oauth-protected-resource`. CIMD and token issuance live on workast-auth.
+Add the server, then authorize when the client asks you to sign in to Workast.
 
-A workspace-scoped API key locks tools to that workspace. Create a key in Workast under **Preferences → API**.
+The server is `https://mcp.workast.com/mcp`.
 
-## Skill
+### Cursor
 
-The server serves one Agent Skill, `workast`, from `skills/workast/SKILL.md` at `skill://workast/SKILL.md`. Initialize advertises the `io.modelcontextprotocol/skills` extension. Clients list it with `skills/list`, fetch one entry with `skills/get`, and read the file with `resources/read`.
+Cursor asks you to add Workast, then asks you to sign in.
 
-## Environment
-
-| Variable | Values | Default |
-| --- | --- | --- |
-| `WORKAST_AUTH_URL` | Issuer URL of workast-auth (same string as auth `AUTH_URL` / well-known `issuer`) | `https://my.workast.com` |
-| `MCP_PUBLIC_ORIGIN` | Public origin, no path (e.g. `https://mcp.workast.com`) | unset (request origin). Required in production so the 401 challenge and `resource` stay stable |
-| `WORKAST_API_URL` | Workast API origin passed to the SDK as `baseUrl` (for example `http://localhost:8080`) | SDK default (`https://api.workast.com`) |
-| `CUSTOMERIO_WRITE_KEY` | Customer.io CDP write key | unset (analytics no-op) |
-| `CUSTOMERIO_HOST` | Customer.io CDP host (for example `https://cdp-eu.customer.io`) | Customer.io default |
-| `LOG_LEVEL` | pino log level | `info` |
-
-## Cursor
-
-API key:
-
-```json
-{
-  "mcpServers": {
-    "workast": {
-      "url": "https://mcp.workast.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${env:WORKAST_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-Set `WORKAST_API_KEY` in your environment (or Cursor’s env config) to a Workast secret API key.
-
-OAuth (client follows the 401 challenge to workast-auth):
+To add it yourself, put this in `~/.cursor/mcp.json` for every project, or in `.cursor/mcp.json` for one repo:
 
 ```json
 {
@@ -59,66 +28,192 @@ OAuth (client follows the 401 challenge to workast-auth):
 }
 ```
 
+[<img alt="Add Workast MCP server to Cursor" src="https://cursor.com/deeplink/mcp-install-dark.png" height="20">](cursor://anysphere.cursor-deeplink/mcp/install?name=workast&config=eyJ1cmwiOiJodHRwczovL21jcC53b3JrYXN0LmNvbS9tY3AifQ==)
+
+### VS Code
+
+VS Code asks you to sign in to Workast.
+
+To add it yourself, put this in `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "workast": {
+      "type": "http",
+      "url": "https://mcp.workast.com/mcp"
+    }
+  }
+}
+```
+
+[<img alt="Install in VS Code" src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF">](vscode:mcp/install?%7B%22name%22%3A%22workast%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.workast.com%2Fmcp%22%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](vscode-insiders:mcp/install?%7B%22name%22%3A%22workast%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.workast.com%2Fmcp%22%7D)
+
+### Visual Studio
+
+Visual Studio asks you to sign in to Workast.
+
+[<img alt="Install in Visual Studio" src="https://img.shields.io/badge/Visual_Studio-Install_Server-purple?style=flat-square&logo=visualstudio&logoColor=white">](https://vs-open.link/mcp-install?%7B%22name%22%3A%22workast%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.workast.com%2Fmcp%22%7D)
+
+### Claude
+
+Open **Customize → Connectors → Add → Custom → Web**. Enter `https://mcp.workast.com/mcp` and choose sign in. Claude asks you to authorize.
+
+### ChatGPT
+
+Open **Plugins**, choose **Add custom MCP server**, and enter `https://mcp.workast.com/mcp`. Choose OAuth. ChatGPT asks you to authorize.
+
+### Claude Code
+
+```sh
+claude mcp add --transport http workast https://mcp.workast.com/mcp
+```
+
+In Claude Code, run `/mcp` and sign in to Workast when asked.
+
+### Any other client
+
+Add `https://mcp.workast.com/mcp`. The client asks you to authorize.
+
+## Ask for work
+
+After you authorize, paste a prompt.
+
+**Turn a plan into tasks**
+
+> Read the launch plan in the Marketing space. Create the tasks on the Open list, and assign them the way that space's README says.
+
+**Pick up a task from a link or a short id**
+
+> What's going on with TQ7ZK? If it's still open, comment that we're blocked on design.
+
+**Close the loop after a meeting**
+
+> From this week's product meeting, comment on each task we discussed. Create anything we agreed to that is not already a task.
+
+**See the work on your plate**
+
+> What is assigned to me this week? Use the saved report if there is one.
+
+**Write a space down**
+
+> Draft a README for the Bugs space from how we already write those tasks. Show it to me before you save it.
+
+**Open a form**
+
+> Create a draft form in the Support space for bug reports. Give me the link to publish it.
+
+## What you can ask for
+
+- **Tasks.** Create, search, update, complete, comment, and split work into subtasks. Personal tasks too.
+- **Spaces.** Find or create a space, set its lists, invite people, and update the README that says how work there is written.
+- **People.** See who you are, find a teammate, and assign them.
+- **Notes and forms.** Read and write notes. Create a draft form that turns responses into tasks. You publish the form.
+- **Meetings.** List meetings in a date range and read one, including the transcript when you ask for it.
+- **Fields and reports.** Use the custom fields a space already has. Open a saved report and the tasks in it.
+
+## How it stays accurate
+
+This server includes a Workast skill. The client reads it and follows the product's rules.
+
+Before it creates work in a space, it reads that space's README and uses the lists, fields, and format written there.
+
+If the repo has a `WORKAST.md` file, that file names the space for the project.
+
+It looks up spaces, people, and tasks. If a lookup finds nothing, it says so.
+
+## Headless access
+
+Use a key when an agent cannot show a sign-in prompt. Log in to your Workast account and create a key for that agent. You stay logged in as yourself. The agent uses the key.
+
+```json
+{
+  "mcpServers": {
+    "workast": {
+      "url": "https://mcp.workast.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+Replace `YOUR_KEY` with the key you created.
+
 ## Tools
 
-| Tool | Description |
+### Tasks
+
+| Tool | What it does |
 | --- | --- |
-| `workast_ping` | Health check (requires auth) |
-| `workast_list_spaces` | List active spaces (optional `name`, `type`, `participants`, `includeArchived`, `limit`, `skip`) |
-| `workast_create_space` | Create a space (`name`, optional `participants`, `privacy`) |
-| `workast_add_space_participants` | Add users to a space (`spaceId`, `users`) |
-| `workast_list_space_participants` | List space participants (`spaceId`) |
-| `workast_update_space` | Update a space (`name`, `readme`, `defaultList`, lists add/rename/remove, fields add/remove) |
-| `workast_list_coworkers` | List teammates (`limit`, `offset`) |
+| `workast_search_tasks` | Search tasks |
+| `workast_retrieve_tasks` | Get tasks by id or short id |
+| `workast_create_tasks` | Create tasks in a space |
+| `workast_create_personal_tasks` | Create personal tasks |
+| `workast_create_subtasks` | Create subtasks |
+| `workast_update_tasks` | Update tasks |
+| `workast_complete_tasks` | Mark tasks done |
+| `workast_create_comment` | Comment on a task |
+| `workast_list_task_activity` | Read activity on a task |
+
+### Spaces
+
+| Tool | What it does |
+| --- | --- |
+| `workast_list_spaces` | Find spaces |
+| `workast_retrieve_space` | Read a space, its lists, and its README |
+| `workast_create_space` | Create a space |
+| `workast_update_space` | Update a space, its lists, and its fields |
+| `workast_update_space_readme` | Replace a space README |
+| `workast_list_space_participants` | See who is in a space |
+| `workast_add_space_participants` | Add people to a space |
+
+### People
+
+| Tool | What it does |
+| --- | --- |
 | `workast_about_me` | Current user and team |
-| `workast_search_tasks` | Search tasks with filters (`spaceId`, `statusIs`, `limit`, `skip`, …) |
-| `workast_retrieve_tasks` | Get tasks (`taskIds[]` or `shortIds[]`) |
-| `workast_create_tasks` | Create tasks in a space (`spaceId`, `tasks[]`) |
-| `workast_create_personal_tasks` | Create personal tasks (`tasks[]`, no `spaceId`) |
-| `workast_create_subtasks` | Create subtasks (`parentTaskId`, `subtasks[]`) |
-| `workast_update_tasks` | Patch tasks (`taskIds[]` plus fields; no `status`) |
-| `workast_complete_tasks` | Mark tasks done (`taskIds[]`) |
-| `workast_create_comment` | Comment on a task (`taskId`, `comment`) |
-| `workast_list_task_activity` | Task activity (`taskId`, `limit`, `skip`) |
-| `workast_list_meetings` | List meetings (`startDateAfter`, `startDateBefore`, optional `participants`, `limit`, `pageToken`) |
-| `workast_retrieve_meeting` | Get a meeting (`meetingId`, optional `includeTranscript`) |
-| `workast_list_fields` | List custom fields (optional `spaceId`) |
-| `workast_create_field` | Create a field and enable it on a space (`spaceId`, `name`, `type`, optional `options`) |
-| `workast_update_field` | Update a custom field (`fieldId`, optional `name`, `description`, `options`) |
-| `workast_list_reports` | List saved reports (optional `home`, `limit`, `skip`) |
-| `workast_retrieve_report` | Get a report and its tasks (`reportId`, `getTasks` default 25) |
+| `workast_list_coworkers` | Find teammates |
 
-Paginated list and search tools accept page size and offset (`limit`/`skip`, or `limit`/`offset` for coworkers). Meetings use `limit` (sent as `maxResults`) and an optional `pageToken`. Those responses include `has_more` and the next page cursor (`next_skip`, `next_offset`, or `nextPageToken`) so clients can keep paging.
+### Notes
 
-## Local development
+| Tool | What it does |
+| --- | --- |
+| `workast_list_notes` | List notes in a space |
+| `workast_retrieve_note` | Read a note |
+| `workast_create_note` | Create a note |
+| `workast_update_note` | Update a note |
 
-```sh
-nvm use
-npm install
-cp .env.sample .env
-npm test
-npm run build
-npm run dev
-```
+### Forms
 
-Point the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) or MCPJam at Streamable HTTP → `http://localhost:3000/mcp` and either send `Authorization: Bearer <your-api-key>` or connect with no Authorization header so OAuth discovery runs via `/.well-known/oauth-protected-resource`. The issuer defaults to `https://my.workast.com`; set `WORKAST_AUTH_URL` when workast-auth is somewhere else. Production MCP URL: `https://mcp.workast.com/mcp`.
+| Tool | What it does |
+| --- | --- |
+| `workast_list_forms` | List forms |
+| `workast_create_form` | Create a draft form |
 
-## Run tool evals
+### Meetings
 
-[mcp-eval-gateway](https://github.com/guillegette/mcp-eval-gateway) scores LLM tool use against the in-process `/mcp` handler. It does not start `next dev`.
+| Tool | What it does |
+| --- | --- |
+| `workast_list_meetings` | List meetings in a date range |
+| `workast_retrieve_meeting` | Read a meeting |
 
-Copy `.env.sample` to `.env` and set `AI_GATEWAY_API_KEY` and `WORKAST_API_KEY`.
+### Fields and reports
 
-`WORKAST_API_KEY` is sent as the Bearer token. The starter `ping` task does not call the Workast API, so any non-blank value works for that task. Tasks that call Workast tools need a real workspace API key. Set `WORKAST_API_URL` when that API is not `https://api.workast.com`.
+| Tool | What it does |
+| --- | --- |
+| `workast_list_fields` | List custom fields |
+| `workast_create_field` | Create a field and turn it on for a space |
+| `workast_update_field` | Update a field |
+| `workast_list_reports` | List saved reports |
+| `workast_retrieve_report` | Open a report and its tasks |
 
-Then run the evals:
+### Connection
 
-```sh
-nvm use
-npm run eval
-```
-
-The runner loads `eval/config.ts` and `eval/tasks.yaml`. The config sets a current-date `systemPrompt` that includes the Workast skill body. `before` archives active spaces whose names contain `McpEval`, `holiday campaign`, or `comp planning` (skipping spaces the token is not a participant of), seeds `McpEval Marketing`, `McpEval Product`, `McpEval Design`, and `McpEval Bugs` when missing, and reopens the three short-ID batch tasks. `after` archives those same spaces and deletes the write-eval tasks. Add tasks there as you add tools.
+| Tool | What it does |
+| --- | --- |
+| `workast_ping` | Check that the connection works |
 
 ## Contributing
 

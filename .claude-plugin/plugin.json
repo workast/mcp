@@ -1,0 +1,19 @@
+{
+  "name": "workast",
+  "version": "1.2.0",
+  "description": "Organize work with your team and agents. Manage tasks, projects and documents.",
+  "author": {
+    "name": "Workast",
+    "email": "support@workast.com",
+    "url": "https://www.workast.com"
+  },
+  "homepage": "https://www.workast.com",
+  "repository": "https://github.com/workast/mcp",
+  "license": "MIT",
+  "keywords": ["workast", "tasks", "projects", "documents", "agents"],
+  "icon": "./assets/logo.png",
+  "documentationUrl": "https://www.workast.com/help/",
+  "supportUrl": "https://www.workast.com/help/article/something-not-working/",
+  "privacyPolicyUrl": "https://www.workast.com/privacy-policy/",
+  "termsOfServiceUrl": "https://www.workast.com/terms-of-service/"
+}

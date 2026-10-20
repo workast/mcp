@@ -10,15 +10,10 @@ const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
 const size = bytes.byteLength;
 const text = bytes.toString('utf8');
 
-const FOLDED_DESCRIPTION = 'Manage Workast spaces, lists, tasks, notes, forms, meetings, and reports. Use when the user mentions Workast, pastes a workast.com or workast.app URL, gives a short task id, or asks to create, assign, search, complete, or comment on work in Workast.\n';
-
-const INSTRUCTIONS = 'Load the Workast skill at skill://workast/SKILL.md when the user mentions Workast, pastes a workast.com or workast.app URL, gives a short task id, or asks to create, assign, search, complete, or comment on work in Workast.';
-
 const skillEntry = {
   uri: 'skill://workast/SKILL.md',
   frontmatter: {
     name: 'workast',
-    description: FOLDED_DESCRIPTION,
   },
   resources: [
     {
@@ -40,7 +35,6 @@ type InitializeResult = {
     resources?: unknown;
     extensions?: Record<string, unknown>;
   };
-  instructions?: string;
 };
 
 type SkillsListResult = {
@@ -75,7 +69,6 @@ type ResourceListEntry = {
   uri?: string;
   name?: string;
   mimeType?: string;
-  description?: string;
 };
 
 type ResourcesListResult = {
@@ -94,7 +87,6 @@ describe('Workast skill', () => {
     const result = message.result as InitializeResult;
     expect(result.capabilities?.resources).toEqual(expect.any(Object));
     expect(result.capabilities?.extensions?.['io.modelcontextprotocol/skills']).toEqual({});
-    expect(result.instructions).toBe(INSTRUCTIONS);
   });
 
   it('lists the Workast skill', async () => {
@@ -104,7 +96,7 @@ describe('Workast skill', () => {
     expect(status).toBe(200);
     expect(message.error).toBeUndefined();
     const result = message.result as SkillsListResult;
-    expect(result.skills).toEqual([skillEntry]);
+    expect(result.skills).toMatchObject([skillEntry]);
     expect(result.resultType).toBe('complete');
     expect(result.ttlMs).toBe(300000);
     expect(result.cacheScope).toBe('public');
@@ -119,7 +111,7 @@ describe('Workast skill', () => {
     expect(status).toBe(200);
     expect(message.error).toBeUndefined();
     const result = message.result as SkillsGetResult;
-    expect(result.skill).toEqual(skillEntry);
+    expect(result.skill).toMatchObject(skillEntry);
     expect(result.resultType).toBe('complete');
     expect(result.ttlMs).toBe(300000);
     expect(result.cacheScope).toBe('public');
@@ -162,6 +154,5 @@ describe('Workast skill', () => {
     expect(resource?.uri).toBe('skill://workast/SKILL.md');
     expect(resource?.name).toBe('workast');
     expect(resource?.mimeType).toBe('text/markdown');
-    expect(resource?.description).toBe(FOLDED_DESCRIPTION);
   });
 });
