@@ -56,7 +56,7 @@ Default list: <name or id>
 3. Resolve people with `workast_list_coworkers` (`name` is case-insensitive, `email` is exact). `assignedTo` is user ids. A `viewer` cannot create, edit, or complete work. Use `workast_list_space_participants` to check membership or say who is in the space. Do not assign in a personal space. For the current user, call `workast_about_me`.
 4. Required custom fields come from `workast_list_fields`.
 5. Apply the summary, list, assignees, and due date the user stated or clearly implied, such as Friday or this week.
-6. `workast_create_tasks`. Title is `summary`. Description is GFM without images, raw HTML, or mentions. Pass `listId` for a specific list. Omit empty fields.
+6. `workast_create_tasks`. Title is `summary`. Description is GFM without images, raw HTML, or mentions. Pass `listId` for a specific list. Pass `repeat` with the due date when the task recurs. Omit empty fields.
 
 No space, or the user's own private work: `workast_create_personal_tasks`.
 
@@ -72,7 +72,10 @@ No space, or the user's own private work: `workast_create_personal_tasks`.
 - Comments and "any movement": `workast_create_comment` and `workast_list_task_activity` after the task id is known.
 - Notes: `workast_list_notes` for the space, `workast_retrieve_note` for content, `workast_create_note` to add one. List first when the user wants to avoid a duplicate.
 - Add a person to a space with `workast_add_space_participants` after resolving their user id.
-- Reschedule with `workast_update_tasks`. Complete only with `workast_complete_tasks`, and only when asked. Completing a recurring task creates the next one.
+- Reschedule with `workast_update_tasks`.
+- Change assignees with `workast_update_tasks`. `addAssignee` adds user ids and leaves the others. `removeAssignee` unassigns those ids after the add. To replace the assignees, add the new ids and remove the current ones. Resolve ids the same way as create.
+- `repeat` needs a due date. `freq` is `daily`, `weekly`, `fortnight`, `monthly`, or `yearly`. Weekdays are `daily` with `byweekday` `0`–`4` (`0` is Monday, `6` is Sunday). The nth weekday of the month is `monthly` with `bysetpos` (`1`–`4`, or `-1` for the last) and one `byweekday`. On `workast_update_tasks`, `null` clears it; omit it to leave the current repeat.
+- Complete only with `workast_complete_tasks`, and only when asked. Completing a recurring task creates the next one.
 - Break work with `workast_create_subtasks`. A subtask cannot have subtasks.
 - Change a space, including its readme, with `workast_update_space`. Send only the sections that change. `name` renames a group space. `readme` replaces the README (GFM, no images, raw HTML, or mentions); an empty string clears it. `defaultList` is an existing list id.
 - Enable an existing field with `fields.add`. Disable it on this space with `fields.remove`. Disabling leaves the field and its task values in place.

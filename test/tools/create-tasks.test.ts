@@ -151,4 +151,121 @@ describe('workast_create_tasks tool', () => {
       { method: 'tasks.create', args: [list.id, { text: task.text }] },
     ]);
   });
+
+  it('sends repeat with the due date', async () => {
+    const repeat = {
+      freq: 'weekly',
+      interval: 1,
+      byweekday: [0, 4],
+    };
+    const body = {
+      text: task.text,
+      dueDate: '2026-04-10',
+      repeat,
+    };
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        dueDate: '2026-04-10',
+        repeat,
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('sends the weekday shape', async () => {
+    const repeat = { freq: 'daily', interval: 1, byweekday: [0, 1, 2, 3, 4] };
+    const body = {
+      text: task.text,
+      dueDate: '2026-04-10',
+      repeat,
+    };
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        dueDate: '2026-04-10',
+        repeat,
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('sends monthly on the nth weekday', async () => {
+    const repeat = {
+      freq: 'monthly',
+      interval: 1,
+      bysetpos: 2,
+      byweekday: [0],
+    };
+    const body = {
+      text: task.text,
+      dueDate: '2026-04-10',
+      repeat,
+    };
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        dueDate: '2026-04-10',
+        repeat,
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('sends fortnight', async () => {
+    const repeat = { freq: 'fortnight' };
+    const body = {
+      text: task.text,
+      dueDate: '2026-04-10',
+      repeat,
+    };
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        dueDate: '2026-04-10',
+        repeat,
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
 });

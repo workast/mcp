@@ -16,6 +16,19 @@ const taskSchema = z.object({
     .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),
   dueDateTime: z.string().optional()
     .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
+  repeat: z.object({
+    freq: z.enum(['daily', 'weekly', 'fortnight', 'monthly', 'yearly'])
+      .describe('daily, weekly, fortnight (every two weeks), monthly, or yearly. Monthly on the nth weekday is monthly with bysetpos and one byweekday.'),
+    interval: z.number().int().min(1).optional()
+      .describe('Repeat every this many weeks or months. Defaults to 1 when omitted.'),
+    byweekday: z.array(z.number().int().min(0).max(6)).max(7).optional()
+      .describe('Weekdays, 0=Monday through 6=Sunday. Unique values.'),
+    bysetpos: z.union([
+      z.literal(-1), z.literal(1), z.literal(2), z.literal(3), z.literal(4),
+    ]).optional()
+      .describe('Which occurrence in the period. 1, 2, 3, 4, or -1 for the last. Used with monthly and one byweekday.'),
+  }).optional()
+    .describe('Recurrence for a task that has a due date. Omit it when the task does not repeat.'),
   listId: z.string().optional()
     .describe('List id from workast_retrieve_space. Omit it to land on the default list.'),
   tags: z.array(z.string()).max(50).optional()
