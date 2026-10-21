@@ -92,7 +92,7 @@ export function createHandler() {
     registerRetrieveReport(server);
     registerWorkastSkill(server);
   }, {
-    serverInfo: { name: 'workast-mcp-server', version: '1.2.0' },
+    serverInfo: { name: 'workast-mcp-server', version: '1.2.1' },
     instructions: 'Load the Workast skill at skill://workast/SKILL.md when the user mentions Workast, pastes a workast.com or workast.app URL, gives a short task id, or asks to create, assign, search, complete, or comment on work in Workast.',
   });
 
