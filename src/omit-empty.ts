@@ -37,6 +37,10 @@ export function omitEmpty<T>(value: T): T {
     }
     const result: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(value)) {
+      if ((key === 'startDate' || key === 'dueDate') && item === null) {
+        result[key] = null;
+        continue;
+      }
       if (isFieldEntry(value) && key === 'value' && typeof item === 'string') {
         result[key] = item;
         continue;

@@ -3,17 +3,17 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { omitEmpty } from '../omit-empty';
 import { runWorkast, toolErrorFrom } from '../run-tool';
+import { needsTimeZone, prepareDate } from '../task-dates';
 
 const inputSchema = z.object({
   taskIds: z.array(z.string()).min(1).max(50).describe('Task IDs to update'),
   summary: z.string().optional().describe('Task summary (title). Prefer this over description.'),
   description: z.string().optional()
     .describe('Longer task details. Only set when extra context is needed beyond the summary.'),
-  startDate: z.string().optional().describe('Start date as YYYY-MM-DD'),
-  dueDate: z.string().optional()
-    .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),
-  dueDateTime: z.string().optional()
-    .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
+  startDate: z.string().nullable().optional()
+    .describe('Start date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T09:00:00. Pass null to clear it.'),
+  dueDate: z.string().nullable().optional()
+    .describe('Due date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T17:00:00. Pass null to clear the due date and the start date.'),
   listId: z.string().optional().describe('List id to move the task to'),
   fields: z
     .array(z.object({
@@ -59,10 +59,20 @@ export function registerUpdateTasks(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_tasks', async (workast) => {
-      const { taskIds, summary, listId, addAssignee, removeAssignee, repeat, ...rest } = args;
+      let {
+        taskIds, summary, listId, addAssignee, removeAssignee, repeat, startDate, dueDate, ...taskFields
+      } = args;
+      if (dueDate === null) startDate = null;
+      const timeZone = [startDate, dueDate].some(needsTimeZone)
+        ? (await workast.users.me()).timezone || 'UTC'
+        : 'UTC';
+      if (dueDate) dueDate = prepareDate(dueDate, timeZone);
+      if (startDate) startDate = prepareDate(startDate, timeZone);
       const patch = omitEmpty({
         text: summary,
-        ...rest,
+        ...taskFields,
+        startDate,
+        dueDate,
         subListId: listId,
         repeat: repeat === null ? undefined : repeat,
       }) as TaskPatch;

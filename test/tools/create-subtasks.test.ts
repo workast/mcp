@@ -39,7 +39,6 @@ const optionalSubtaskInput = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  dueDateTime: '17:00:00',
   tags: [tag.id],
   fields: [{ id: customField.id, value: 'High' }],
 };
@@ -50,7 +49,6 @@ const optionalSubtaskBody = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  dueDateTime: '17:00:00',
   tags: [tag.id],
   fields: [{ id: customField.id, value: 'High' }],
 };
@@ -116,6 +114,57 @@ describe('workast_create_subtasks tool', () => {
       { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.subtasks.create', args: [task.id, { text: task.text }] },
       { method: 'tasks.subtasks.create', args: [task.id, { text: task.text }] },
+    ]);
+  });
+
+  it('forwards an all-day start and due as YYYY-MM-DD', async () => {
+    const body = {
+      text: task.text,
+      startDate: '2026-04-01',
+      dueDate: '2026-04-10',
+    };
+    mock.tasks.subtasks.create.on(task.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_subtasks', {
+      parentTaskId: task.id,
+      subtasks: [{
+        summary: task.text,
+        startDate: '2026-04-01',
+        dueDate: '2026-04-10',
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { subtasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.subtasks.create', args: [task.id, body] },
+    ]);
+  });
+
+  it('stores a wall-clock due time as UTC in the user timezone', async () => {
+    const body = {
+      text: task.text,
+      dueDate: '2026-04-10T07:00:00.000Z',
+    };
+    mock.tasks.subtasks.create.on(task.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_subtasks', {
+      parentTaskId: task.id,
+      subtasks: [{
+        summary: task.text,
+        dueDate: '2026-04-10T17:00:00',
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { subtasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'users.me', args: [] },
+      { method: 'tasks.subtasks.create', args: [task.id, body] },
     ]);
   });
 });

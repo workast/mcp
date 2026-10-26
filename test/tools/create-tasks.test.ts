@@ -39,7 +39,6 @@ const optionalTaskInput = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  dueDateTime: '17:00:00',
   listId: subList.id,
   tags: [tag.id],
   meetingId: meeting.id,
@@ -52,7 +51,6 @@ const optionalTaskBody = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  dueDateTime: '17:00:00',
   subListId: subList.id,
   tags: [tag.id],
   meetingId: meeting.id,
@@ -93,7 +91,6 @@ describe('workast_create_tasks tool', () => {
         description: '',
         startDate: '',
         dueDate: '2026-09-28',
-        dueDateTime: '',
         tags: [],
         meetingId: '',
         fields: [],
@@ -265,6 +262,77 @@ describe('workast_create_tasks tool', () => {
     expectToolData(message, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('forwards an all-day start and due as YYYY-MM-DD', async () => {
+    const body = {
+      text: task.text,
+      startDate: '2026-04-01',
+      dueDate: '2026-04-10',
+    };
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        startDate: '2026-04-01',
+        dueDate: '2026-04-10',
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('returns startDate and dueDate on the created card', async () => {
+    const startDate = '2026-04-01T09:00:00.000Z';
+    const dueDate = '2026-04-01T17:00:00.000Z';
+    const body = { text: task.text, startDate, dueDate };
+    mock.tasks.create.on(list.id, body).resolves({ ...task, startDate, dueDate });
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{ summary: task.text, startDate, dueDate }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, {
+      tasks: [{ ...createdTaskCard, startDate, dueDate }],
+    });
+  });
+
+  it('stores a wall-clock start and due as UTC in the user timezone', async () => {
+    const body = {
+      text: task.text,
+      startDate: '2026-04-09T23:00:00.000Z',
+      dueDate: '2026-04-10T07:00:00.000Z',
+    };
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{
+        summary: task.text,
+        startDate: '2026-04-10T09:00:00',
+        dueDate: '2026-04-10T17:00:00',
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'users.me', args: [] },
       { method: 'tasks.create', args: [list.id, body] },
     ]);
   });

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { omitEmpty } from '../omit-empty';
 import { projectSearchTask, searchTaskCardSchema } from '../project';
 import { runWorkast, toolErrorFrom } from '../run-tool';
+import { needsTimeZone, prepareDate } from '../task-dates';
 
 const taskSchema = z.object({
   summary: z.string().describe('Task summary (title). Prefer this over description.'),
@@ -11,11 +12,10 @@ const taskSchema = z.object({
     .describe('User IDs to assign (not names or emails). Use workast_list_coworkers or workast_list_space_participants to look up IDs.'),
   description: z.string().optional()
     .describe('Longer task details. GitHub Flavored Markdown without images, raw HTML, or mentions. Use this to provide extra context when needed beyond the summary.'),
-  startDate: z.string().optional().describe('Start date as YYYY-MM-DD'),
+  startDate: z.string().optional()
+    .describe('Start date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T09:00:00.'),
   dueDate: z.string().optional()
-    .describe('Due date as YYYY-MM-DD. Without dueDateTime the task is due on that date with no time. The current user timezone is used automatically.'),
-  dueDateTime: z.string().optional()
-    .describe('Due time as HH:mm:ss (e.g. 17:00:00). When set with dueDate, the task has a due time and the assignee is reminded before it is due.'),
+    .describe('Due date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T17:00:00.'),
   repeat: z.object({
     freq: z.enum(['daily', 'weekly', 'fortnight', 'monthly', 'yearly'])
       .describe('daily, weekly, fortnight (every two weeks), monthly, or yearly. Monthly on the nth weekday is monthly with bysetpos and one byweekday.'),
@@ -67,13 +67,22 @@ export function registerCreateTasks(server: McpServer): void {
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_tasks', async (workast) => {
+      const dates = args.tasks.flatMap((task) => [task.startDate, task.dueDate]);
+      const timeZone = dates.some(needsTimeZone)
+        ? (await workast.users.me()).timezone || 'UTC'
+        : 'UTC';
       const created: ReturnType<typeof projectSearchTask>[] = [];
-      for (const [i, { summary, listId, ...rest }] of args.tasks.entries()) {
+      for (const [i, task] of args.tasks.entries()) {
         try {
+          let { summary, listId, startDate, dueDate, ...taskFields } = task;
+          if (dueDate) dueDate = prepareDate(dueDate, timeZone);
+          if (startDate) startDate = prepareDate(startDate, timeZone);
           created.push(projectSearchTask(
             await workast.tasks.create(
               args.spaceId,
-              omitEmpty({ text: summary, ...rest, subListId: listId }) as TaskCreate,
+              omitEmpty({
+                text: summary, ...taskFields, startDate, dueDate, subListId: listId,
+              }) as TaskCreate,
             ),
           ));
         } catch (error) {

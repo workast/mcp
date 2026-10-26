@@ -54,7 +54,6 @@ describe('workast_update_tasks tool', () => {
       description: '',
       startDate: '',
       dueDate: '2026-09-28',
-      dueDateTime: '',
       listId: '',
       fields: [],
     });
@@ -342,5 +341,101 @@ describe('workast_update_tasks tool', () => {
       { method: 'tasks.update', args: [task.id, { repeat: { freq: 'daily' } }] },
     ]);
     expect((mock.calls()[1].args[1] as { repeat: object }).repeat).not.toHaveProperty('byweekday');
+  });
+
+  it('forwards an all-day start and due as YYYY-MM-DD', async () => {
+    const patch = { startDate: '2026-04-01', dueDate: '2026-04-10' };
+    mock.tasks.update.on(task.id, patch).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      startDate: '2026-04-01',
+      dueDate: '2026-04-10',
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, patch] },
+    ]);
+  });
+
+  it('forwards a timed start and due as ISO datetimes', async () => {
+    const patch = {
+      startDate: '2026-04-01T09:00:00.000Z',
+      dueDate: '2026-04-01T17:00:00.000Z',
+    };
+    mock.tasks.update.on(task.id, patch).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      startDate: '2026-04-01T09:00:00.000Z',
+      dueDate: '2026-04-01T17:00:00.000Z',
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, patch] },
+    ]);
+  });
+
+  it('clears the start date', async () => {
+    mock.tasks.update.on(task.id, { startDate: null }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      startDate: null,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, { startDate: null }] },
+    ]);
+  });
+
+  it('clears the due date and the start date', async () => {
+    const patch = { startDate: null, dueDate: null };
+    mock.tasks.update.on(task.id, patch).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      dueDate: null,
+      startDate: '2026-04-10T09:00:00',
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.update', args: [task.id, patch] },
+    ]);
+  });
+
+  it('stores a wall-clock due time as UTC in the user timezone', async () => {
+    const patch = { dueDate: '2026-04-10T07:00:00.000Z' };
+    mock.tasks.update.on(task.id, patch).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      dueDate: '2026-04-10T17:00:00',
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'users.me', args: [] },
+      { method: 'tasks.update', args: [task.id, patch] },
+    ]);
   });
 });
