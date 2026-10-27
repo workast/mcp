@@ -372,4 +372,24 @@ describe('workast_retrieve_tasks tool', () => {
       { method: 'tasks.retrieveByShortId', args: [task.shortId] },
     ]);
   });
+
+  it('returns startDate and dueDate on the task card', async () => {
+    const startDate = '2026-04-01T09:00:00.000Z';
+    const dueDate = '2026-04-01T17:00:00.000Z';
+    mock.tasks.retrieve.on(task.id).resolves({
+      ...task,
+      startDate,
+      dueDate,
+    });
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_retrieve_tasks', {
+      taskIds: [task.id],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, {
+      tasks: [{ ...retrieveTaskCard, startDate, dueDate }],
+    });
+  });
 });

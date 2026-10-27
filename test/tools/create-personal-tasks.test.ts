@@ -39,8 +39,7 @@ const optionalTaskInput = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  dueDateTime: '17:00:00',
-  tags: [tag.id],
+  tags: [tag.name],
   fields: [{ id: customField.id, value: 'High' }],
 };
 
@@ -50,7 +49,6 @@ const optionalTaskBody = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  dueDateTime: '17:00:00',
   tags: [tag.id],
   fields: [{ id: customField.id, value: 'High' }],
 };
@@ -77,6 +75,7 @@ describe('workast_create_personal_tasks tool', () => {
   });
 
   it('calls tasks.createPersonal with the optional fields that were passed', async () => {
+    mock.tags.list.on({ name: tag.name }).resolves([tag]);
     mock.tasks.createPersonal.on(optionalTaskBody).resolves(task);
     const POST = createHandler();
 
@@ -88,10 +87,9 @@ describe('workast_create_personal_tasks tool', () => {
     expectToolData(message, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
-      {
-      method: 'tasks.createPersonal',
-      args: [optionalTaskBody],
-    }]);
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.createPersonal', args: [optionalTaskBody] },
+    ]);
   });
 
   it('returns a partial batch result when the second create fails', async () => {
@@ -113,6 +111,55 @@ describe('workast_create_personal_tasks tool', () => {
       { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.createPersonal', args: [{ text: task.text }] },
       { method: 'tasks.createPersonal', args: [{ text: task.text }] },
+    ]);
+  });
+
+  it('forwards an all-day start and due as YYYY-MM-DD', async () => {
+    const body = {
+      text: task.text,
+      startDate: '2026-04-01',
+      dueDate: '2026-04-10',
+    };
+    mock.tasks.createPersonal.on(body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_personal_tasks', {
+      tasks: [{
+        summary: task.text,
+        startDate: '2026-04-01',
+        dueDate: '2026-04-10',
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.createPersonal', args: [body] },
+    ]);
+  });
+
+  it('stores a wall-clock due time as UTC in the user timezone', async () => {
+    const body = {
+      text: task.text,
+      dueDate: '2026-04-10T07:00:00.000Z',
+    };
+    mock.tasks.createPersonal.on(body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_personal_tasks', {
+      tasks: [{
+        summary: task.text,
+        dueDate: '2026-04-10T17:00:00',
+      }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'users.me', args: [] },
+      { method: 'tasks.createPersonal', args: [body] },
     ]);
   });
 });

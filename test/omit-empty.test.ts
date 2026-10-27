@@ -49,6 +49,19 @@ describe('omitEmpty', () => {
     })).toEqual({});
   });
 
+  it('keeps null startDate and dueDate', () => {
+    expect(omitEmpty({
+      text: 'Ship',
+      startDate: null,
+      dueDate: null,
+      description: null,
+    })).toEqual({
+      text: 'Ship',
+      startDate: null,
+      dueDate: null,
+    });
+  });
+
   it('leaves 0 and false in place', () => {
     expect(omitEmpty({ limit: 0, includeSubTasks: false })).toEqual({
       limit: 0,
