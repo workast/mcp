@@ -6,6 +6,7 @@ import {
   cleanupEvalWrites,
   ensureBugReportSpace,
   ensureSeedSpaces,
+  prepareTagTask,
   reopenEvalTasks,
 } from './workspace.js';
 
@@ -52,6 +53,7 @@ export default {
     const workast = evalWorkast();
     await ensureSeedSpaces(workast);
     await ensureBugReportSpace(workast);
+    await prepareTagTask(workast);
     await reopenEvalTasks(workast);
   },
   async after() {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { examples, errors } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
+import { TAG_COLORS } from '../../src/task-tags';
 import {
   callTool,
   expectToolData,
@@ -8,7 +9,10 @@ import {
   setupWorkastMock,
 } from '../helpers';
 
-const { customField, subList, task, user } = examples;
+const { customField, subList, tag, task, user } = examples;
+
+const paletteColor = expect.stringMatching(new RegExp(`^(?:${TAG_COLORS.join('|')})$`));
+const launchTag = { id: customField.id, name: 'Launch', color: '#00C853' };
 
 const patchInput = {
   summary: task.text,
@@ -437,5 +441,267 @@ describe('workast_update_tasks tool', () => {
       { method: 'users.me', args: [] },
       { method: 'tasks.update', args: [task.id, patch] },
     ]);
+  });
+
+  it('addTags finds the tag and adds its id', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.addTag.on(task.id, { tags: [tag.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      addTags: ['Feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [tag.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+    expect(methods).not.toContain('tags.create');
+  });
+
+  it('addTags creates a missing tag', async () => {
+    mock.tags.list.on({ name: 'Launch' }).resolves([]);
+    mock.tags.create.on((body: { name: string; color: string }) => body.name === 'Launch' && TAG_COLORS.includes(body.color)).resolves(launchTag);
+    mock.tasks.addTag.on(task.id, { tags: [customField.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      addTags: ['Launch'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Launch' }] },
+      { method: 'tags.create', args: [{ name: 'Launch', color: paletteColor }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [customField.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+  });
+
+  it('addTags looks up once for two tasks', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.addTag.on(task.id, { tags: [tag.id] }).resolves();
+    mock.tasks.addTag.on(task.createdBy.id, { tags: [tag.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id, task.createdBy.id],
+      addTags: ['Feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id, task.createdBy.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [tag.id] }] },
+      { method: 'tasks.addTag', args: [task.createdBy.id, { tags: [tag.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+    expect(mock.calls().filter((call) => call.method === 'tags.list')).toHaveLength(1);
+  });
+
+  it('removeTags finds the tag and removes its id', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.removeTag.on(task.id, { tags: [tag.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      removeTags: ['Feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.removeTag', args: [task.id, { tags: [tag.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+    expect(methods).not.toContain('tags.create');
+  });
+
+  it('removeTags skips a name that has no tag', async () => {
+    mock.tags.list.on({ name: 'Missing' }).resolves([]);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      removeTags: ['Missing'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Missing' }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+    expect(methods).not.toContain('tasks.removeTag');
+    expect(methods).not.toContain('tags.create');
+  });
+
+  it('removeTags matches a different case', async () => {
+    mock.tags.list.on({ name: 'feature' }).resolves([tag]);
+    mock.tasks.removeTag.on(task.id, { tags: [tag.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      removeTags: ['feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'feature' }] },
+      { method: 'tasks.removeTag', args: [task.id, { tags: [tag.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+    expect(methods).not.toContain('tags.create');
+  });
+
+  it('addTags then removeTags, one lookup each', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tags.list.on({ name: 'Launch' }).resolves([launchTag]);
+    mock.tasks.addTag.on(task.id, { tags: [tag.id] }).resolves();
+    mock.tasks.removeTag.on(task.id, { tags: [customField.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      addTags: ['Feature'],
+      removeTags: ['Launch'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tags.list', args: [{ name: 'Launch' }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [tag.id] }] },
+      { method: 'tasks.removeTag', args: [task.id, { tags: [customField.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+  });
+
+  it('adds a tag and then removes it', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.addTag.on(task.id, { tags: [tag.id] }).resolves();
+    mock.tasks.removeTag.on(task.id, { tags: [tag.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      addTags: ['Feature'],
+      removeTags: ['Feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [tag.id] }] },
+      { method: 'tasks.removeTag', args: [task.id, { tags: [tag.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
+  });
+
+  it('patches, then addTags', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.update.on(task.id, { text: task.text }).resolves();
+    mock.tasks.addTag.on(task.id, { tags: [tag.id] }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      summary: task.text,
+      addTags: ['Feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.update', args: [task.id, { text: task.text }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [tag.id] }] },
+    ]);
+    expect(mock.calls()[2].args[1]).not.toHaveProperty('addTags');
+  });
+
+  it('blank tag arrays do nothing', async () => {
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      addTags: [],
+      removeTags: [],
+      summary: '',
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+    ]);
+  });
+
+  it('keeps the first task when the second addTag fails', async () => {
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.addTag.on(task.id, { tags: [tag.id] }).resolves();
+    mock.tasks.addTag.on(task.createdBy.id, { tags: [tag.id] }).rejects(errors.unauthorized);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id, task.createdBy.id],
+      addTags: ['Feature'],
+    });
+
+    expect(status).toBe(200);
+    expectToolError(message, {
+      param: 'taskIds[1]',
+      message: /Unauthorized/,
+      status: 401,
+    }, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.addTag', args: [task.id, { tags: [tag.id] }] },
+      { method: 'tasks.addTag', args: [task.createdBy.id, { tags: [tag.id] }] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tasks.retrieve');
+    expect(methods).not.toContain('tasks.update');
   });
 });

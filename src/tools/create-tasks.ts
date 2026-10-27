@@ -5,6 +5,7 @@ import { omitEmpty } from '../omit-empty';
 import { projectSearchTask, searchTaskCardSchema } from '../project';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 import { needsTimeZone, prepareDate } from '../task-dates';
+import { findOrCreateTags } from '../task-tags';
 
 const taskSchema = z.object({
   summary: z.string().describe('Task summary (title). Prefer this over description.'),
@@ -32,7 +33,7 @@ const taskSchema = z.object({
   listId: z.string().optional()
     .describe('List id from workast_retrieve_space. Omit it to land on the default list.'),
   tags: z.array(z.string()).max(50).optional()
-    .describe('Tag IDs to add (not names). Use IDs from existing tasks or search results.'),
+    .describe('Tag names. The tool finds a tag with that name or creates it.'),
   meetingId: z.string().optional()
     .describe('Meeting ID to associate. Use workast_list_meetings to look up IDs.'),
   fields: z
@@ -74,14 +75,15 @@ export function registerCreateTasks(server: McpServer): void {
       const created: ReturnType<typeof projectSearchTask>[] = [];
       for (const [i, task] of args.tasks.entries()) {
         try {
-          let { summary, listId, startDate, dueDate, ...taskFields } = task;
+          let { summary, listId, startDate, dueDate, tags, ...taskFields } = task;
           if (dueDate) dueDate = prepareDate(dueDate, timeZone);
           if (startDate) startDate = prepareDate(startDate, timeZone);
+          const tagIds = await findOrCreateTags(workast, tags);
           created.push(projectSearchTask(
             await workast.tasks.create(
               args.spaceId,
               omitEmpty({
-                text: summary, ...taskFields, startDate, dueDate, subListId: listId,
+                text: summary, ...taskFields, startDate, dueDate, subListId: listId, tags: tagIds,
               }) as TaskCreate,
             ),
           ));

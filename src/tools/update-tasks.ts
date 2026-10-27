@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { omitEmpty } from '../omit-empty';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 import { needsTimeZone, prepareDate } from '../task-dates';
+import { findOrCreateTags, findTags } from '../task-tags';
 
 const inputSchema = z.object({
   taskIds: z.array(z.string()).min(1).max(50).describe('Task IDs to update'),
@@ -27,6 +28,10 @@ const inputSchema = z.object({
     .describe('User IDs to assign. Adds these people and leaves other assignees in place. Use workast_list_coworkers or workast_list_space_participants. Not names or emails.'),
   removeAssignee: z.array(z.string()).max(50).optional()
     .describe('User IDs to unassign. Applied after addAssignee. Not names or emails.'),
+  addTags: z.array(z.string()).max(10).optional()
+    .describe('Tag names to add. Finds each tag or creates it. Leaves other tags in place.'),
+  removeTags: z.array(z.string()).max(10).optional()
+    .describe('Tag names to remove. Applied after addTags. A name with no tag is skipped.'),
   repeat: z.object({
     freq: z.enum(['daily', 'weekly', 'fortnight', 'monthly', 'yearly'])
       .describe('daily, weekly, fortnight (every two weeks), monthly, or yearly. Weekdays (Mon–Fri) are daily with byweekday [0,1,2,3,4]. Monthly on the nth weekday is monthly with bysetpos and one byweekday.'),
@@ -47,7 +52,7 @@ export function registerUpdateTasks(server: McpServer): void {
     'workast_update_tasks',
     {
       title: 'Update Tasks',
-      description: 'Update one or more tasks. Assignees are changed with addAssignee and removeAssignee, and repeat is set with repeat or cleared with null. Does not change status; use workast_complete_tasks to complete. Omit unused optional fields; do not send empty strings or empty arrays.',
+      description: 'Update one or more tasks. Assignees are changed with addAssignee and removeAssignee, tags are changed with addTags and removeTags, and repeat is set with repeat or cleared with null. Does not change status; use workast_complete_tasks to complete. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({ succeeded: z.array(z.string()) }),
       annotations: {
@@ -60,7 +65,8 @@ export function registerUpdateTasks(server: McpServer): void {
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_tasks', async (workast) => {
       let {
-        taskIds, summary, listId, addAssignee, removeAssignee, repeat, startDate, dueDate, ...taskFields
+        taskIds, summary, listId, addAssignee, removeAssignee, addTags, removeTags,
+        repeat, startDate, dueDate, ...taskFields
       } = args;
       if (dueDate === null) startDate = null;
       const timeZone = [startDate, dueDate].some(needsTimeZone)
@@ -81,6 +87,8 @@ export function registerUpdateTasks(server: McpServer): void {
       }
       const usersToAdd = omitEmpty(addAssignee) as string[] | undefined;
       const usersToRemove = omitEmpty(removeAssignee) as string[] | undefined;
+      const toAdd = await findOrCreateTags(workast, addTags);
+      const toRemove = await findTags(workast, removeTags);
       const succeeded = [];
 
       for (const [i, taskId] of taskIds.entries()) {
@@ -93,6 +101,12 @@ export function registerUpdateTasks(server: McpServer): void {
           }
           if (usersToRemove?.length) {
             await workast.tasks.unassign(taskId, { users: usersToRemove });
+          }
+          if (toAdd.length) {
+            await workast.tasks.addTag(taskId, { tags: toAdd });
+          }
+          if (toRemove.length) {
+            await workast.tasks.removeTag(taskId, { tags: toRemove });
           }
           succeeded.push(taskId);
         } catch (error) {

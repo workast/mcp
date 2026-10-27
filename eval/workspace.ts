@@ -1,4 +1,4 @@
-import { ApiError, type TaskSearch, type Workast } from '@workast/sdk';
+import { type TaskSearch, type Workast } from '@workast/sdk';
 
 const EVAL_PREFIX = 'McpEval';
 
@@ -19,6 +19,9 @@ export const CLEANUP_TASK_SUBSTR = [
 ] as const;
 
 export const BUG_REPORT_SPACE = 'McpEval Bug Reports';
+
+export const TAG_TASK_TEXT = 'McpEval tag the release checklist';
+export const TAG_TASK_SPACE = 'McpEval Product';
 
 const BUG_REPORT_README = [
   'When creating a task in this space, start the summary with [Bug].',
@@ -92,17 +95,7 @@ async function archiveEvalSpaces(workast: Workast) {
     if (!space.id || !space.name || !includesAny(space.name, CLEANUP_SPACE_SUBSTR)) {
       continue;
     }
-    if (space.isParticipant === false) {
-      continue;
-    }
-    try {
-      await workast.lists.archive(space.id);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 403) {
-        continue;
-      }
-      throw error;
-    }
+    await workast.lists.archive(space.id);
   }
 }
 
@@ -129,15 +122,16 @@ export async function ensureBugReportSpace(workast: Workast): Promise<void> {
   }
 }
 
+export async function prepareTagTask(workast: Workast): Promise<void> {
+  const [space] = await listExactName(workast, TAG_TASK_SPACE);
+  await workast.tasks.create(space.id, { text: TAG_TASK_TEXT });
+}
+
 export async function reopenEvalTasks(workast: Workast): Promise<void> {
   for (const taskId of RESET_TASK_IDS) {
-    try {
+    const task = await workast.tasks.retrieve(taskId);
+    if (task.status === 'done') {
       await workast.tasks.uncomplete(taskId);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 400 && error.message.includes('pending')) {
-        continue;
-      }
-      throw error;
     }
   }
 }
@@ -156,13 +150,6 @@ export async function cleanupEvalWrites(workast: Workast): Promise<void> {
     if (!task.id || !includesAny(task.text ?? '', CLEANUP_TASK_SUBSTR)) {
       continue;
     }
-    try {
-      await workast.tasks.del(task.id);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 403) {
-        continue;
-      }
-      throw error;
-    }
+    await workast.tasks.del(task.id);
   }
 }

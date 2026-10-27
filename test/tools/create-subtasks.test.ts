@@ -39,7 +39,7 @@ const optionalSubtaskInput = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  tags: [tag.id],
+  tags: [tag.name],
   fields: [{ id: customField.id, value: 'High' }],
 };
 
@@ -76,6 +76,7 @@ describe('workast_create_subtasks tool', () => {
   });
 
   it('calls tasks.subtasks.create with the optional fields that were passed', async () => {
+    mock.tags.list.on({ name: tag.name }).resolves([tag]);
     mock.tasks.subtasks.create.on(task.id, optionalSubtaskBody).resolves(task);
     const POST = createHandler();
 
@@ -88,10 +89,9 @@ describe('workast_create_subtasks tool', () => {
     expectToolData(message, { subtasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
-      {
-      method: 'tasks.subtasks.create',
-      args: [task.id, optionalSubtaskBody],
-    }]);
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.subtasks.create', args: [task.id, optionalSubtaskBody] },
+    ]);
   });
 
   it('returns a partial batch result when the second subtask create fails', async () => {

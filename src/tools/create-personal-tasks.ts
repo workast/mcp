@@ -5,6 +5,7 @@ import { omitEmpty } from '../omit-empty';
 import { projectSearchTask, searchTaskCardSchema } from '../project';
 import { runWorkast, toolErrorFrom } from '../run-tool';
 import { needsTimeZone, prepareDate } from '../task-dates';
+import { findOrCreateTags } from '../task-tags';
 
 const taskSchema = z.object({
   summary: z.string().describe('Task summary (title). Prefer this over description.'),
@@ -17,7 +18,7 @@ const taskSchema = z.object({
   dueDate: z.string().optional()
     .describe('Due date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T17:00:00.'),
   tags: z.array(z.string()).max(50).optional()
-    .describe('Tag IDs to add (not names). Use IDs from existing tasks or search results.'),
+    .describe('Tag names. The tool finds a tag with that name or creates it.'),
   fields: z
     .array(z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
@@ -56,12 +57,13 @@ export function registerCreatePersonalTasks(server: McpServer): void {
       const created: ReturnType<typeof projectSearchTask>[] = [];
       for (const [i, task] of args.tasks.entries()) {
         try {
-          let { summary, startDate, dueDate, ...taskFields } = task;
+          let { summary, startDate, dueDate, tags, ...taskFields } = task;
           if (dueDate) dueDate = prepareDate(dueDate, timeZone);
           if (startDate) startDate = prepareDate(startDate, timeZone);
+          const tagIds = await findOrCreateTags(workast, tags);
           created.push(projectSearchTask(
             await workast.tasks.createPersonal(
-              omitEmpty({ text: summary, ...taskFields, startDate, dueDate }) as TaskCreate,
+              omitEmpty({ text: summary, ...taskFields, startDate, dueDate, tags: tagIds }) as TaskCreate,
             ),
           ));
         } catch (error) {

@@ -179,6 +179,12 @@
     In the McpEval Bug Reports space, list the notes and add one about best practices when reporting a bug.
   judge: >-
     Spaces are listed to find one matching "McpEval Bug Reports". Notes in that space are listed with workast_list_notes, and a note about best practices when reporting a bug is created there with workast_create_note. If the space does not exist, the final response says so and no note is created in an unrelated space.
+- name: add-task-tag
+  prompt: >-
+    In the McpEval Product space, put the mcp_eval_launch tag on the task "McpEval tag the release checklist". Don't change anything else on it.
+  judge: >-
+    Spaces are listed to find one matching "McpEval Product", and the task whose summary is "McpEval tag the release checklist" is found in that space. workast_update_tasks is called with that task's id and addTags containing the name mcp_eval_launch. The name is not sent as a tag id. No other task is changed, the task is not completed, and no new task is created. If the space or the task does not exist, the final response says so.
+
 - name: add-review-list
   prompt: >-
     In the McpEval Product space, add a list called "McpEval Review" for work that's waiting on feedback. If that list is already there, leave it.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { examples, errors } from '@workast/sdk/mock';
 import { createHandler } from '../../src/create-handler';
+import { TAG_COLORS } from '../../src/task-tags';
 import {
   callTool,
   expectToolData,
@@ -9,6 +10,8 @@ import {
 } from '../helpers';
 
 const { customField, list, meeting, subList, tag, task, user } = examples;
+
+const paletteColor = expect.stringMatching(new RegExp(`^(?:${TAG_COLORS.join('|')})$`));
 
 const createdTaskCard = {
   id: task.id,
@@ -40,7 +43,7 @@ const optionalTaskInput = {
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
   listId: subList.id,
-  tags: [tag.id],
+  tags: [tag.name],
   meetingId: meeting.id,
   fields: [{ id: customField.id, value: 'High' }],
 };
@@ -108,6 +111,7 @@ describe('workast_create_tasks tool', () => {
   });
 
   it('calls tasks.create with the optional fields that were passed', async () => {
+    mock.tags.list.on({ name: tag.name }).resolves([tag]);
     mock.tasks.create.on(list.id, optionalTaskBody).resolves(task);
     const POST = createHandler();
 
@@ -120,10 +124,115 @@ describe('workast_create_tasks tool', () => {
     expectToolData(message, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
-      {
-      method: 'tasks.create',
-      args: [list.id, optionalTaskBody],
-    }]);
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.create', args: [list.id, optionalTaskBody] },
+    ]);
+    const methods = mock.calls().map((call) => call.method);
+    expect(methods).not.toContain('tags.create');
+    expect(methods).not.toContain('tasks.retrieve');
+  });
+
+  it('creates a missing tag, then sends its id', async () => {
+    const body = { text: task.text, tags: [customField.id] };
+    const created = { id: customField.id, name: 'Launch', color: '#00C853' };
+    mock.tags.list.on({ name: 'Launch' }).resolves([]);
+    mock.tags.create.on((body: { name: string; color: string }) => body.name === 'Launch' && TAG_COLORS.includes(body.color)).resolves(created);
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{ summary: task.text, tags: ['Launch'] }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Launch' }] },
+      { method: 'tags.create', args: [{ name: 'Launch', color: paletteColor }] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('creates each missing name from its own lookup', async () => {
+    const body = { text: task.text, tags: [customField.id, meeting.id] };
+    const launch = { id: customField.id, name: 'Launch', color: '#00C853' };
+    const ship = { id: meeting.id, name: 'Ship', color: '#00C853' };
+    mock.tags.list.on({ name: 'Launch' }).resolves([]);
+    mock.tags.list.on({ name: 'Ship' }).resolves([]);
+    mock.tags.create.on((body: { name: string; color: string }) => body.name === 'Launch' && TAG_COLORS.includes(body.color)).resolves(launch);
+    mock.tags.create.on((body: { name: string; color: string }) => body.name === 'Ship' && TAG_COLORS.includes(body.color)).resolves(ship);
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{ summary: task.text, tags: ['Launch', 'Ship'] }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Launch' }] },
+      { method: 'tags.create', args: [{ name: 'Launch', color: paletteColor }] },
+      { method: 'tags.list', args: [{ name: 'Ship' }] },
+      { method: 'tags.create', args: [{ name: 'Ship', color: paletteColor }] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+  });
+
+  it('reuses a tag whose name differs only by case', async () => {
+    const body = { text: task.text, tags: [tag.id] };
+    mock.tags.list.on({ name: 'feature' }).resolves([tag]);
+    mock.tasks.create.on(list.id, body).resolves(task);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [{ summary: task.text, tags: ['feature'] }],
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'feature' }] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
+    expect(mock.calls().map((call) => call.method)).not.toContain('tags.create');
+  });
+
+  it('keeps the first task when the second create fails', async () => {
+    const body = { text: task.text, tags: [tag.id] };
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tags.list.on({ name: 'Feature' }).resolves([tag]);
+    mock.tasks.create.on(list.id, body).resolves(task);
+    mock.tasks.create.on(list.id, body).rejects(errors.unauthorized);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_create_tasks', {
+      spaceId: list.id,
+      tasks: [
+        { summary: task.text, tags: ['Feature'] },
+        { summary: task.text, tags: ['Feature'] },
+      ],
+    });
+
+    expect(status).toBe(200);
+    expectToolError(message, {
+      param: 'tasks[1]',
+      message: /Unauthorized/,
+      status: 401,
+    }, { tasks: [createdTaskCard] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.create', args: [list.id, body] },
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.create', args: [list.id, body] },
+    ]);
   });
 
   it('returns a partial batch result when the second create fails', async () => {

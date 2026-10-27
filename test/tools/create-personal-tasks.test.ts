@@ -39,7 +39,7 @@ const optionalTaskInput = {
   description: task.description,
   startDate: '2026-04-01T00:00:00.000Z',
   dueDate: '2026-04-10T00:00:00.000Z',
-  tags: [tag.id],
+  tags: [tag.name],
   fields: [{ id: customField.id, value: 'High' }],
 };
 
@@ -75,6 +75,7 @@ describe('workast_create_personal_tasks tool', () => {
   });
 
   it('calls tasks.createPersonal with the optional fields that were passed', async () => {
+    mock.tags.list.on({ name: tag.name }).resolves([tag]);
     mock.tasks.createPersonal.on(optionalTaskBody).resolves(task);
     const POST = createHandler();
 
@@ -86,10 +87,9 @@ describe('workast_create_personal_tasks tool', () => {
     expectToolData(message, { tasks: [createdTaskCard] });
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
-      {
-      method: 'tasks.createPersonal',
-      args: [optionalTaskBody],
-    }]);
+      { method: 'tags.list', args: [{ name: 'Feature' }] },
+      { method: 'tasks.createPersonal', args: [optionalTaskBody] },
+    ]);
   });
 
   it('returns a partial batch result when the second create fails', async () => {
