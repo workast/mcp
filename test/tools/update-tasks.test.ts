@@ -9,7 +9,13 @@ import {
   setupWorkastMock,
 } from '../helpers';
 
-const { customField, subList, tag, task, user } = examples;
+const { customField, list, note, subList, tag, task, user } = examples;
+
+const noteList = note.list;
+if (typeof noteList === 'string' || noteList == null || noteList.id == null) {
+  throw new Error('examples.note.list is a list object');
+}
+const secondSourceSpaceId = noteList.id;
 
 const paletteColor = expect.stringMatching(new RegExp(`^(?:${TAG_COLORS.join('|')})$`));
 const launchTag = { id: customField.id, name: 'Launch', color: '#00C853' };
@@ -60,6 +66,7 @@ describe('workast_update_tasks tool', () => {
       dueDate: '2026-09-28',
       listId: '',
       fields: [],
+      spaceId: '',
     });
 
     expect(status).toBe(200);
@@ -84,6 +91,142 @@ describe('workast_update_tasks tool', () => {
     expect(mock.calls()).toEqual([
       { method: 'tokens.retrieve', args: [] },
       { method: 'tasks.update', args: [task.id, { subListId: subList.id }] },
+    ]);
+  });
+
+  it('moves a task to another space', async () => {
+    mock.tasks.retrieve.on(task.id).resolves(task);
+    mock.tasks.move.on(task.listId, { tasks: [task.id], target: list.id }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      spaceId: list.id,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.retrieve', args: [task.id] },
+      {
+        method: 'tasks.move',
+        args: [task.listId, { tasks: [task.id], target: list.id }],
+      },
+    ]);
+  });
+
+  it('moves a task onto a list in another space', async () => {
+    mock.tasks.retrieve.on(task.id).resolves(task);
+    mock.tasks.move.on(task.listId, {
+      tasks: [task.id],
+      target: list.id,
+      subListId: subList.id,
+    }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      spaceId: list.id,
+      listId: subList.id,
+    });
+
+    expect(status).toBe(200);
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.retrieve', args: [task.id] },
+      {
+        method: 'tasks.move',
+        args: [task.listId, { tasks: [task.id], target: list.id, subListId: subList.id }],
+      },
+    ]);
+    expectToolData(message, { succeeded: [task.id] });
+  });
+
+  it('moves, then patches, and the patch has no space or list', async () => {
+    mock.tasks.retrieve.on(task.id).resolves(task);
+    mock.tasks.move.on(task.listId, { tasks: [task.id], target: list.id }).resolves();
+    mock.tasks.update.on(task.id, { text: task.text }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id],
+      spaceId: list.id,
+      summary: task.text,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.retrieve', args: [task.id] },
+      {
+        method: 'tasks.move',
+        args: [task.listId, { tasks: [task.id], target: list.id }],
+      },
+      { method: 'tasks.update', args: [task.id, { text: task.text }] },
+    ]);
+  });
+
+  it('moves each task from its own current space', async () => {
+    mock.tasks.retrieve.on(task.id).resolves(task);
+    mock.tasks.retrieve.on(user.id).resolves({ ...task, id: user.id, listId: secondSourceSpaceId });
+    mock.tasks.move.on(task.listId, { tasks: [task.id], target: list.id }).resolves();
+    mock.tasks.move.on(secondSourceSpaceId, { tasks: [user.id], target: list.id }).resolves();
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id, user.id],
+      spaceId: list.id,
+    });
+
+    expect(status).toBe(200);
+    expectToolData(message, { succeeded: [task.id, user.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.retrieve', args: [task.id] },
+      {
+        method: 'tasks.move',
+        args: [task.listId, { tasks: [task.id], target: list.id }],
+      },
+      { method: 'tasks.retrieve', args: [user.id] },
+      {
+        method: 'tasks.move',
+        args: [secondSourceSpaceId, { tasks: [user.id], target: list.id }],
+      },
+    ]);
+  });
+
+  it('returns a partial batch result when the second move fails', async () => {
+    mock.tasks.retrieve.on(task.id).resolves(task);
+    mock.tasks.retrieve.on(user.id).resolves({ ...task, id: user.id, listId: secondSourceSpaceId });
+    mock.tasks.move.on(task.listId, { tasks: [task.id], target: list.id }).resolves();
+    mock.tasks.move.on(secondSourceSpaceId, { tasks: [user.id], target: list.id }).rejects(errors.unauthorized);
+    const POST = createHandler();
+
+    const { status, message } = await callTool(POST, 'workast_update_tasks', {
+      taskIds: [task.id, user.id],
+      spaceId: list.id,
+    });
+
+    expect(status).toBe(200);
+    expectToolError(message, {
+      param: 'taskIds[1]',
+      message: /Unauthorized/,
+      status: 401,
+    }, { succeeded: [task.id] });
+    expect(mock.calls()).toEqual([
+      { method: 'tokens.retrieve', args: [] },
+      { method: 'tasks.retrieve', args: [task.id] },
+      {
+        method: 'tasks.move',
+        args: [task.listId, { tasks: [task.id], target: list.id }],
+      },
+      { method: 'tasks.retrieve', args: [user.id] },
+      {
+        method: 'tasks.move',
+        args: [secondSourceSpaceId, { tasks: [user.id], target: list.id }],
+      },
     ]);
   });
 
