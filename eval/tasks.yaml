@@ -180,6 +180,12 @@
   judge: >-
     Spaces are listed to find one matching "McpEval Product", and the task whose summary is "McpEval tag the release checklist" is found in that space. workast_update_tasks is called with that task's id and addTags containing the name mcp_eval_launch. The name is not sent as a tag id. No other task is changed, the task is not completed, and no new task is created. If the space or the task does not exist, the final response says so.
 
+- name: set-status-field
+  prompt: >-
+    Create the task "Prepare release docs" in the space McpEval Product and set the custom field Status to Backlog
+  judge: >-
+    Spaces are listed to find one matching "McpEval Product", and custom fields are listed so the existing Status field and its Backlog option are used. workast_create_tasks creates one task in that space whose summary is "Prepare release docs". The Status argument on that call is the Backlog option id returned by the field listing, not the word Backlog. The create_tasks result for that task includes a Status field. A result that omits Status means the value was not stored and does not pass. Sending the label Backlog where the option id belongs does not pass, even when the tool result displays the word Backlog. Creating another Status field, setting Status on a different task, or creating the task in another space does not pass. If the space, the Status field, or the Backlog option does not exist, the final response says so and no task is created in an unrelated space.
+
 - name: add-review-list
   prompt: >-
     In the McpEval Product space, add a list called "McpEval Review" for work that's waiting on feedback. If that list is already there, leave it.

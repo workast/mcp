@@ -17,6 +17,7 @@ const BUG_REPORT_README = [
 const TAG_TASK_TEXT = 'McpEval tag the release checklist';
 const TAG_NAME = 'mcp_eval_launch';
 const REVIEW_LIST = 'McpEval Review';
+const STATUS_FIELD = 'Status';
 const FORM_TITLE = 'McpEval Customer Request';
 const COWORKER_NAME = 'Julian';
 
@@ -214,6 +215,17 @@ async function removeCoworker(workast: Workast, spaceId: string, name: string): 
   await workast.lists.participants.del(spaceId, { users: [coworker.id] });
 }
 
+async function disableStatusField(workast: Workast, spaceId: string): Promise<void> {
+  const fields = await workast.fields.list({ listId: spaceId });
+  const status = fields.find((field) => field.name && sameName(field.name, STATUS_FIELD));
+  if (!status?.id) {
+    throw new Error('Status field was not found in the eval workspace');
+  }
+  if (status.enable) {
+    await workast.lists.fields.disable(spaceId, status.id);
+  }
+}
+
 async function clearPriorityField(workast: Workast, spaceId: string): Promise<void> {
   const fields = await workast.fields.list({ listId: spaceId });
   for (const field of fields) {
@@ -399,6 +411,7 @@ export async function resetEvalWorkspace(workast: Workast): Promise<void> {
   const fixtures = await ensureSpace(workast, SPACES.fixtures);
 
   await removeCoworker(workast, design, COWORKER_NAME);
+  await disableStatusField(workast, product);
   await clearPriorityField(workast, bugs);
   await removeReviewList(workast, product);
   await ensureForm(workast, product);
