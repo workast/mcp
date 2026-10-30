@@ -39,7 +39,7 @@ const inputSchema = z.object({
     .describe('Filter by tag IDs (not names). Use IDs from existing tasks or search results.'),
   customFields: z.array(z.object({
     fieldId: z.string().describe('Custom field ID from workast_list_fields'),
-    value: z.string().describe('Value to match on that field'),
+    value: z.string().describe('For an options field, the option id from workast_list_fields, not the option name. For a text or number field, the stored text or number.'),
   })).max(50).optional()
     .describe('Filter by custom field values'),
   limit: z.number().int().min(1).max(100).default(25)

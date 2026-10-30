@@ -22,7 +22,7 @@ const subtaskSchema = z.object({
   fields: z
     .array(z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
-      value: z.string().describe('Value to set on the field'),
+      value: z.string().describe('For an options field, the option id from workast_list_fields, not the option name. For a text or number field, the text or the number as a string.'),
     }))
     .max(50)
     .optional()

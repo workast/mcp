@@ -2,13 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { POST } from '../app/mcp/route.js';
 import { createWorkast } from '../src/workast.js';
-import {
-  cleanupEvalWrites,
-  ensureBugReportSpace,
-  ensureSeedSpaces,
-  prepareTagTask,
-  reopenEvalTasks,
-} from './workspace.js';
+import { resetEvalWorkspace } from './workspace.js';
 
 function workastSkillBody(): string {
   const text = readFileSync(join(process.cwd(), 'skills/workast/SKILL.md'), 'utf8');
@@ -25,6 +19,11 @@ function evalWorkast() {
     throw new Error('WORKAST_API_KEY is required for eval hooks');
   }
   return createWorkast(apiKey);
+}
+
+const mcpToken = process.env.WORKAST_MCP_TOKEN;
+if (!mcpToken) {
+  throw new Error('WORKAST_MCP_TOKEN is required for MCP calls during evals');
 }
 
 const today = new Date().toLocaleDateString('en-GB', {
@@ -47,16 +46,12 @@ export default {
     url: 'http://localhost/mcp',
     fetch: (input: string | URL, init?: RequestInit) =>
       POST(new Request(input, init)),
-    headers: { Authorization: `Bearer ${process.env.WORKAST_API_KEY}` },
+    headers: { Authorization: `Bearer ${mcpToken}` },
   },
   async before() {
-    const workast = evalWorkast();
-    await ensureSeedSpaces(workast);
-    await ensureBugReportSpace(workast);
-    await prepareTagTask(workast);
-    await reopenEvalTasks(workast);
+    await resetEvalWorkspace(evalWorkast());
   },
   async after() {
-    await cleanupEvalWrites(evalWorkast());
+    await resetEvalWorkspace(evalWorkast());
   },
 };

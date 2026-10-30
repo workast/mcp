@@ -32,14 +32,14 @@ Point the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) 
 
 [mcp-eval-gateway](https://github.com/guillegette/mcp-eval-gateway) scores LLM tool use against the in-process `/mcp` handler. It does not start the dev server.
 
-Copy `.env.sample` to `.env` and set `AI_GATEWAY_API_KEY` and `WORKAST_API_KEY`. Tasks that call Workast need a real workspace key. Set `WORKAST_API_URL` when the API is not `https://api.workast.com`.
+Copy `.env.sample` to `.env` and set `AI_GATEWAY_API_KEY`, `WORKAST_API_KEY`, and `WORKAST_MCP_TOKEN`. `WORKAST_API_KEY` is the privileged key for setup and teardown. `WORKAST_MCP_TOKEN` is the bearer on MCP calls during the run, so permission errors an MCP token would hit still show up. Set `WORKAST_API_URL` when the API is not `https://api.workast.com`.
 
 ```sh
 nvm use
 npm run eval
 ```
 
-The runner loads `eval/config.ts` and `eval/tasks.yaml`. Before the tasks, it archives active spaces whose names contain `McpEval`, `holiday campaign`, or `comp planning`, seeds the `McpEval` spaces when they are missing, and reopens the batch tasks. After the tasks, it archives those spaces and deletes the write-eval tasks.
+The runner loads `eval/config.ts` and `eval/tasks.yaml`. Before and after the tasks, it resets the McpEval spaces: Marketing, Product, Design, Bugs, Bug Reports, and Fixtures stay, any other active space whose name starts with McpEval is archived, and the fixture tasks are restored. Starter spaces outside that prefix are left alone. Personal tasks whose summary contains McpEval are deleted.
 
 ## Add a tool
 

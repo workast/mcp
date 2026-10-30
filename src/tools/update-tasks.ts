@@ -1,4 +1,4 @@
-import type { TaskPatch } from '@workast/sdk';
+import type { TaskMove, TaskPatch } from '@workast/sdk';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { omitEmpty } from '../omit-empty';
@@ -15,11 +15,12 @@ const inputSchema = z.object({
     .describe('Start date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T09:00:00. Pass null to clear it.'),
   dueDate: z.string().nullable().optional()
     .describe('Due date as YYYY-MM-DD, for example 2026-04-10. When the user gives a time, use YYYY-MM-DDTHH:mm:ss, for example 2026-04-10T17:00:00. Pass null to clear the due date and the start date.'),
-  listId: z.string().optional().describe('List id to move the task to'),
+  spaceId: z.string().optional().describe('Space id to move the task to. Pass listId to choose a list in that space. Omit listId to use the default list.'),
+  listId: z.string().optional().describe('List id to move the task to. Send it with spaceId to choose a list in that space. Send it alone to move within the current space.'),
   fields: z
     .array(z.object({
       id: z.string().describe('Custom field ID from workast_list_fields'),
-      value: z.string().describe('Value to set on the field'),
+      value: z.string().describe('For an options field, the option id from workast_list_fields, not the option name. For a text or number field, the text or the number as a string. An empty string clears the field.'),
     }))
     .max(50)
     .optional()
@@ -52,7 +53,7 @@ export function registerUpdateTasks(server: McpServer): void {
     'workast_update_tasks',
     {
       title: 'Update Tasks',
-      description: 'Update one or more tasks. Assignees are changed with addAssignee and removeAssignee, tags are changed with addTags and removeTags, and repeat is set with repeat or cleared with null. Does not change status; use workast_complete_tasks to complete. Omit unused optional fields; do not send empty strings or empty arrays.',
+      description: 'Update one or more tasks. Pass spaceId to move a task to that space. Pass listId with spaceId to choose a list there. Pass listId alone to move within the current space. Assignees are changed with addAssignee and removeAssignee, tags are changed with addTags and removeTags, and repeat is set with repeat or cleared with null. Does not change status; use workast_complete_tasks to complete. Omit unused optional fields; do not send empty strings or empty arrays.',
       inputSchema,
       outputSchema: z.object({ succeeded: z.array(z.string()) }),
       annotations: {
@@ -65,7 +66,7 @@ export function registerUpdateTasks(server: McpServer): void {
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_tasks', async (workast) => {
       let {
-        taskIds, summary, listId, addAssignee, removeAssignee, addTags, removeTags,
+        taskIds, summary, spaceId, listId, addAssignee, removeAssignee, addTags, removeTags,
         repeat, startDate, dueDate, ...taskFields
       } = args;
       if (dueDate === null) startDate = null;
@@ -74,12 +75,14 @@ export function registerUpdateTasks(server: McpServer): void {
         : 'UTC';
       if (dueDate) dueDate = prepareDate(dueDate, timeZone);
       if (startDate) startDate = prepareDate(startDate, timeZone);
+      spaceId = omitEmpty(spaceId) as string | undefined;
+      listId = omitEmpty(listId) as string | undefined;
       const patch = omitEmpty({
         text: summary,
         ...taskFields,
         startDate,
         dueDate,
-        subListId: listId,
+        subListId: spaceId ? undefined : listId,
         repeat: repeat === null ? undefined : repeat,
       }) as TaskPatch;
       if (repeat === null) {
@@ -93,6 +96,14 @@ export function registerUpdateTasks(server: McpServer): void {
 
       for (const [i, taskId] of taskIds.entries()) {
         try {
+          if (spaceId) {
+            const current = await workast.tasks.retrieve(taskId);
+            await workast.tasks.move(current.listId as string, omitEmpty({
+              tasks: [taskId],
+              target: spaceId,
+              subListId: listId,
+            }) as TaskMove);
+          }
           if (Object.keys(patch).length > 0) {
             await workast.tasks.update(taskId, patch);
           }
