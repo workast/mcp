@@ -35,7 +35,7 @@ describe('publish manifests', () => {
       expect(manifest).not.toHaveProperty('mcpServers');
       expect(manifest.$schema).toBe('https://agent-plugins.org/schemas/1.0.0/plugin.schema.json');
       expect(manifest.name).toBe('workast');
-      expect(manifest.version).toBe('1.4.0');
+      expect(manifest.version).toBe('1.4.1');
       expect(manifest.description).toBe(description);
       expect(manifest.author).toEqual({
         name: 'Workast',
@@ -78,7 +78,7 @@ describe('publish manifests', () => {
       const manifest = readJson('plugin/.claude-plugin/plugin.json');
 
       expect(manifest.name).toBe('workast');
-      expect(manifest.version).toBe('1.4.0');
+      expect(manifest.version).toBe('1.4.1');
       expect(manifest.description).toBe(description);
       expect(manifest.author).toEqual({
         name: 'Workast',
@@ -116,7 +116,7 @@ describe('publish manifests', () => {
       const manifest = readJson('plugin/.plugin/plugin.json');
 
       expect(manifest.name).toBe('workast');
-      expect(manifest.version).toBe('1.4.0');
+      expect(manifest.version).toBe('1.4.1');
       expect(manifest.description).toBe(description);
       expect(manifest.author).toEqual({
         name: 'Workast',
@@ -137,7 +137,7 @@ describe('publish manifests', () => {
       const manifest = readJson('plugin/.cursor-plugin/plugin.json');
 
       expect(manifest.name).toBe('workast');
-      expect(manifest.version).toBe('1.4.0');
+      expect(manifest.version).toBe('1.4.1');
       expect(manifest.description).toBe(description);
       expect(manifest.author).toEqual({
         name: 'Workast',
@@ -159,7 +159,7 @@ describe('publish manifests', () => {
       expect(manifest.name).toBe('com.workast/mcp');
       expect(manifest.title).toBe('Workast');
       expect(manifest.description).toBe(description);
-      expect(manifest.version).toBe('1.4.0');
+      expect(manifest.version).toBe('1.4.1');
       expect(manifest.websiteUrl).toBe('https://www.workast.com');
       expect(manifest.repository).toEqual({
         url: 'https://github.com/workast/mcp',
