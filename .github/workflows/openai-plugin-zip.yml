@@ -1,0 +1,59 @@
+name: OpenAI plugin zip
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+
+      - name: Zip the OpenAI plugin
+        run: |
+          version=$(jq -r '.version' plugin/plugin.json)
+          stage=$(mktemp -d)
+          cp plugin/plugin.json plugin/mcp.json "$stage/"
+          cp -R plugin/skills plugin/assets "$stage/"
+          archive="$GITHUB_WORKSPACE/workast-openai-${version}.zip"
+          (
+            cd "$stage"
+            zip -r "$archive" plugin.json mcp.json skills assets
+          )
+          echo "archive=$archive" >> "$GITHUB_ENV"
+          unzip -l "$archive"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workast-openai-plugin
+          path: ${{ env.archive }}
+
+      - name: Attach the zip to the release
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
+          for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release upload "$tag" "$archive" --clobber
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "No GitHub release for $tag yet. Download the workflow artifact."

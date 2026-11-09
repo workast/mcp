@@ -61,6 +61,14 @@ describe('publish manifests', () => {
       expect(manifest.mcpServers.workast).toEqual({
         type: 'streamable-http',
         url: 'https://mcp.workast.com/mcp',
+        extensions: {
+          'com.openai': {
+            auth: {
+              type: 'oauth',
+              client: { mode: 'dcr' },
+            },
+          },
+        },
       });
     });
   });
