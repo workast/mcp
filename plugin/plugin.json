@@ -1,0 +1,88 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "workast",
+  "version": "1.4.0",
+  "description": "Organize work with your team and agents. Manage tasks, projects and documents.",
+  "author": {
+    "name": "Workast",
+    "email": "support@workast.com",
+    "url": "https://www.workast.com"
+  },
+  "homepage": "https://www.workast.com",
+  "repository": "https://github.com/workast/mcp",
+  "license": "MIT",
+  "keywords": ["workast", "tasks", "projects", "documents", "agents"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Workast",
+        "shortDescription": "Turn chats into Workast tasks",
+        "longDescription": "Organize work with your team and agents. Bring a client brief to ChatGPT and turn it into a Workast project with tasks, owners, and deadlines. After kickoff, use your meeting notes to update the plan in Workast. Your team can see what changed, who owns the next step, and what's due.",
+        "developerName": "Workast",
+        "category": "Productivity",
+        "websiteURL": "https://www.workast.com",
+        "supportURL": "https://www.workast.com/help/article/something-not-working/",
+        "privacyPolicyURL": "https://www.workast.com/privacy-policy/",
+        "termsOfServiceURL": "https://www.workast.com/terms-of-service/",
+        "logo": "./assets/logo.png",
+        "composerIcon": "./assets/logo.png",
+        "defaultPrompt": [
+          "List the spaces in my Workast workspace.",
+          "Find my Workast tasks due this week.",
+          "Turn this client brief into an onboarding plan in Workast. Create tasks and subtasks, and flag missing owners or deadlines."
+        ]
+      },
+      "review": {
+        "demo_recording_url": "https://cleanshot.com/share/bVYSRQpS",
+        "test_cases": {
+          "positive": [
+            {
+              "description": "List active spaces. Sign in as the reviewer and ensure Acme Client Onboarding is an active space visible to that account.",
+              "prompt": "List the spaces in my Workast workspace.",
+              "tools_triggered": "workast_list_spaces (no name filter; includeArchived omitted or false)",
+              "expected_behavior": "Lists spaces returned by Workast, including Acme Client Onboarding."
+            },
+            {
+              "description": "Find this week's assigned work. Before running, make Confirm kickoff date open in Acme Client Onboarding, assign it to the signed-in reviewer, and set its due date within the current week.",
+              "prompt": "Find my open tasks due this week in Acme Client Onboarding. Include the due dates and task links.",
+              "tools_triggered": "workast_search_tasks (spaceId for Acme Client Onboarding, assignedTo containing the signed-in reviewer's user ID, statusIs=pending, dueDateAfter and dueDateBefore for the current week)",
+              "expected_behavior": "Includes Confirm kickoff date with its actual due date and Workast link. Report only matching tasks from the requested space, assignment, status, and date range."
+            },
+            {
+              "description": "Create the kickoff task and its subtasks. Run in the sample space; start with no task named Prepare Acme kickoff.",
+              "prompt": "Acme needs a kickoff agenda, brand assets, and an access checklist. In Acme Client Onboarding, create a task called “Prepare Acme kickoff” with one subtask for each item. Give me a link to the parent task.",
+              "tools_triggered": "workast_create_tasks (Acme Client Onboarding spaceId, summary Prepare Acme kickoff), then workast_create_subtasks (parentTaskId returned by create, three subtasks for kickoff agenda, brand assets, and access checklist)",
+              "expected_behavior": "Creates one parent in the requested space and exactly three subtasks under it. Returns the link to the created parent."
+            },
+            {
+              "description": "Update an existing subtask after the creation case. The brand assets subtask must exist under Prepare Acme kickoff.",
+              "prompt": "Kickoff update: Acme will share its brand assets in a Google Drive folder. Add that detail to the brand assets subtask under “Prepare Acme kickoff.”",
+              "tools_triggered": "workast_update_tasks (taskIds containing only the resolved brand assets subtask ID; description adds the Google Drive folder detail while preserving existing content)",
+              "expected_behavior": "The brand assets subtask in Workast contains the new detail. The parent and sibling tasks are unchanged and no duplicate subtask is created."
+            },
+            {
+              "description": "Complete the sample task after the due-this-week case. Confirm kickoff date must still be open in Acme Client Onboarding.",
+              "prompt": "Mark “Confirm kickoff date” complete in Acme Client Onboarding.",
+              "tools_triggered": "workast_complete_tasks (taskIds containing only the resolved Confirm kickoff date task ID)",
+              "expected_behavior": "Confirm kickoff date is marked done in Workast. The response confirms completion only after the tool reports success."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Run after the creation case with Prepare Acme kickoff still present. Task deletion is unsupported. Explain the limit without calling a write tool, marking it complete instead, or claiming it was deleted. The task remains in Workast.",
+              "prompt": "Delete “Prepare Acme kickoff” from Acme Client Onboarding."
+            },
+            {
+              "description": "Start with an unpublished Client Intake form in the sample space. Explain that publishing must be done in Workast. A read-only form lookup or an editor link is fine; do not create, modify, or claim to publish a form. Client Intake remains a draft.",
+              "prompt": "Publish the “Client Intake” draft form in Workast."
+            },
+            {
+              "description": "Select Workast as the only active connection. Explain that it cannot send Slack messages. Do not invoke a messaging tool, write a substitute Workast comment, or claim the message was sent.",
+              "prompt": "Using Workast, send a Slack message saying the Acme kickoff is confirmed."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

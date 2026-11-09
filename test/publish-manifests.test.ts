@@ -15,9 +15,9 @@ describe('publish manifests', () => {
     expect(description.length).toBeLessThanOrEqual(100);
   });
 
-  describe('plugin.json', () => {
+  describe('plugin/plugin.json', () => {
     it('matches the agent plugin manifest', () => {
-      const manifest = readJson('plugin.json');
+      const manifest = readJson('plugin/plugin.json');
 
       expect(Object.keys(manifest)).toEqual([
         '$schema',
@@ -29,6 +29,7 @@ describe('publish manifests', () => {
         'repository',
         'license',
         'keywords',
+        'extensions',
       ]);
       expect(manifest).not.toHaveProperty('skills');
       expect(manifest).not.toHaveProperty('mcpServers');
@@ -45,12 +46,14 @@ describe('publish manifests', () => {
       expect(manifest.repository).toBe('https://github.com/workast/mcp');
       expect(manifest.license).toBe('MIT');
       expect(manifest.keywords).toEqual(keywords);
+      expect(manifest.extensions['com.openai'].interface.logo).toBe('./assets/logo.png');
+      expect(manifest.extensions['com.openai'].interface.composerIcon).toBe('./assets/logo.png');
     });
   });
 
-  describe('mcp.json', () => {
+  describe('plugin/mcp.json', () => {
     it('points the workast server at streamable HTTP', () => {
-      const manifest = readJson('mcp.json');
+      const manifest = readJson('plugin/mcp.json');
 
       expect(Object.keys(manifest)).toEqual(['$schema', 'mcpServers']);
       expect(manifest.$schema).toBe('https://agent-plugins.org/schemas/1.0.0/mcp.schema.json');
@@ -62,9 +65,9 @@ describe('publish manifests', () => {
     });
   });
 
-  describe('.claude-plugin/plugin.json', () => {
+  describe('plugin/.claude-plugin/plugin.json', () => {
     it('matches the Claude plugin manifest', () => {
-      const manifest = readJson('.claude-plugin/plugin.json');
+      const manifest = readJson('plugin/.claude-plugin/plugin.json');
 
       expect(manifest.name).toBe('workast');
       expect(manifest.version).toBe('1.4.0');
@@ -88,22 +91,42 @@ describe('publish manifests', () => {
     });
   });
 
-  describe('.mcp.json', () => {
-    it('points the workast server at HTTP with OAuth', () => {
-      const manifest = readJson('.mcp.json');
+  describe('plugin/.mcp.json', () => {
+    it('points the workast server at HTTP', () => {
+      const manifest = readJson('plugin/.mcp.json');
 
       expect(Object.keys(manifest)).toEqual(['mcpServers']);
       expect(manifest.mcpServers.workast).toEqual({
         type: 'http',
         url: 'https://mcp.workast.com/mcp',
-        oauth: true,
       });
     });
   });
 
-  describe('.cursor-plugin/plugin.json', () => {
+  describe('plugin/.plugin/plugin.json', () => {
+    it('matches the Open Plugins manifest', () => {
+      const manifest = readJson('plugin/.plugin/plugin.json');
+
+      expect(manifest.name).toBe('workast');
+      expect(manifest.version).toBe('1.4.0');
+      expect(manifest.description).toBe(description);
+      expect(manifest.author).toEqual({
+        name: 'Workast',
+        email: 'support@workast.com',
+        url: 'https://www.workast.com',
+      });
+      expect(manifest.homepage).toBe('https://www.workast.com');
+      expect(manifest.repository).toBe('https://github.com/workast/mcp');
+      expect(manifest.license).toBe('MIT');
+      expect(manifest.keywords).toEqual(keywords);
+      expect(manifest.mcpServers).toBe('./mcp.json');
+      expect(manifest).not.toHaveProperty('skills');
+    });
+  });
+
+  describe('plugin/.cursor-plugin/plugin.json', () => {
     it('matches the Cursor plugin manifest', () => {
-      const manifest = readJson('.cursor-plugin/plugin.json');
+      const manifest = readJson('plugin/.cursor-plugin/plugin.json');
 
       expect(manifest.name).toBe('workast');
       expect(manifest.version).toBe('1.4.0');
@@ -144,9 +167,9 @@ describe('publish manifests', () => {
     });
   });
 
-  describe('assets/logo.png', () => {
+  describe('plugin/assets/logo.png', () => {
     it('is a PNG file', () => {
-      const logo = readFileSync(join(process.cwd(), 'assets/logo.png'));
+      const logo = readFileSync(join(process.cwd(), 'plugin/assets/logo.png'));
 
       expect(Array.from(logo.subarray(0, 8))).toEqual([
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,

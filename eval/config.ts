@@ -5,7 +5,7 @@ import { createWorkast } from '../src/workast.js';
 import { resetEvalWorkspace } from './workspace.js';
 
 function workastSkillBody(): string {
-  const text = readFileSync(join(process.cwd(), 'skills/workast/SKILL.md'), 'utf8');
+  const text = readFileSync(join(process.cwd(), 'plugin/skills/workast/SKILL.md'), 'utf8');
   const end = text.startsWith('---\n') ? text.indexOf('\n---\n', 4) : -1;
   if (end === -1) {
     throw new Error('Workast skill frontmatter is missing');

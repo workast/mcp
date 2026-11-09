@@ -87,7 +87,7 @@ function parseFrontmatter(text: string): { name: string; description: string } {
 }
 
 export function registerWorkastSkill(server: McpServer): void {
-  const bytes = readFileSync(join(process.cwd(), 'skills/workast/SKILL.md'));
+  const bytes = readFileSync(join(process.cwd(), 'plugin/skills/workast/SKILL.md'));
   const text = bytes.toString('utf8');
   const { name, description } = parseFrontmatter(text);
   const entry = {

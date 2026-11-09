@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createHandler } from '../src/create-handler';
 import { callJsonRpc, setupWorkastMock } from './helpers';
 
-const bytes = readFileSync(join(process.cwd(), 'skills/workast/SKILL.md'));
+const bytes = readFileSync(join(process.cwd(), 'plugin/skills/workast/SKILL.md'));
 const digest = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
 const size = bytes.byteLength;
 const text = bytes.toString('utf8');
