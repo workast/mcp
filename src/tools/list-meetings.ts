@@ -31,6 +31,7 @@ export function registerListMeetings(server: McpServer): void {
         title: 'List Meetings',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_meetings', async (workast) => {

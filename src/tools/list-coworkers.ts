@@ -36,6 +36,7 @@ export function registerListCoworkers(server: McpServer): void {
         title: 'List Coworkers',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_coworkers', async (workast) => {

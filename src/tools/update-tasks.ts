@@ -60,7 +60,7 @@ export function registerUpdateTasks(server: McpServer): void {
         title: 'Update Tasks',
         openWorldHint: false,
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
       },
     },

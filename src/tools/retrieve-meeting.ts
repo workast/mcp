@@ -22,6 +22,7 @@ export function registerRetrieveMeeting(server: McpServer): void {
         title: 'Retrieve Meeting',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_meeting', async (workast) => {

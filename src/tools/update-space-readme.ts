@@ -19,7 +19,7 @@ export function registerUpdateSpaceReadme(server: McpServer): void {
         title: 'Update Space Readme',
         openWorldHint: false,
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
       },
     },

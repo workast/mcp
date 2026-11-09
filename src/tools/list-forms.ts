@@ -33,6 +33,7 @@ export function registerListForms(server: McpServer): void {
         title: 'List Forms',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_forms', async (workast) => {

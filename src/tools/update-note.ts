@@ -26,7 +26,7 @@ export function registerUpdateNote(server: McpServer): void {
         title: 'Update Note',
         openWorldHint: false,
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
       },
     },

@@ -34,6 +34,7 @@ export function registerListNotes(server: McpServer): void {
         title: 'List Notes',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_notes', async (workast) => {

@@ -19,6 +19,7 @@ export function registerRetrieveNote(server: McpServer): void {
         title: 'Retrieve Note',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_note', async (workast) => {

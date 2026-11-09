@@ -32,6 +32,7 @@ export function registerListReports(server: McpServer): void {
         title: 'List Reports',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_reports', async (workast) => {

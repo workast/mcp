@@ -41,7 +41,7 @@ export function registerUpdateField(server: McpServer): void {
         title: 'Update Field',
         openWorldHint: false,
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
       },
     },

@@ -145,6 +145,7 @@ export function registerSearchTasks(server: McpServer): void {
         title: 'Search Tasks',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_search_tasks', async (workast) => {

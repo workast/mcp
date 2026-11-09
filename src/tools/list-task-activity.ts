@@ -32,6 +32,7 @@ export function registerListTaskActivity(server: McpServer): void {
         title: 'List Task Activity',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_task_activity', async (workast) => {

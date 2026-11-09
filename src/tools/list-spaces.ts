@@ -38,6 +38,7 @@ export function registerListSpaces(server: McpServer): void {
         title: 'List Spaces',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_spaces', async (workast) => {

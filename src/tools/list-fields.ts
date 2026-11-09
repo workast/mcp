@@ -20,6 +20,7 @@ export function registerListFields(server: McpServer): void {
         title: 'List Fields',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_fields', async (workast) => {

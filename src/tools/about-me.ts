@@ -17,6 +17,7 @@ export function registerAboutMe(server: McpServer): void {
         title: 'About Me',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (_args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_about_me', async (workast) => {

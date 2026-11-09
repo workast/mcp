@@ -48,6 +48,7 @@ export function createHandler() {
           title: 'Ping',
           openWorldHint: false,
           readOnlyHint: true,
+          destructiveHint: false,
         },
       },
       async () => {

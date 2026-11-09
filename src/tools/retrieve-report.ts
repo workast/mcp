@@ -22,6 +22,7 @@ export function registerRetrieveReport(server: McpServer): void {
         title: 'Retrieve Report',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_report', async (workast) => {

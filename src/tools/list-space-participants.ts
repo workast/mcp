@@ -19,6 +19,7 @@ export function registerListSpaceParticipants(server: McpServer): void {
         title: 'List Space Participants',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_space_participants', async (workast) => {

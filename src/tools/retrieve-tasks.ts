@@ -30,6 +30,7 @@ export function registerRetrieveTasks(server: McpServer): void {
         title: 'Retrieve Tasks',
         openWorldHint: false,
         readOnlyHint: true,
+        destructiveHint: false,
       },
     },
     async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_tasks', async (workast) => {
