@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "com.workast/mcp",
+  "name": "com.workast.mcp/mcp",
   "title": "Workast",
   "description": "Organize work with your team and agents. Manage tasks, projects and documents.",
   "version": "1.4.1",

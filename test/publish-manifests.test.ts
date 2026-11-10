@@ -156,7 +156,7 @@ describe('publish manifests', () => {
       const manifest = readJson('server.json');
 
       expect(manifest.$schema).toBe('https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json');
-      expect(manifest.name).toBe('com.workast/mcp');
+      expect(manifest.name).toBe('com.workast.mcp/mcp');
       expect(manifest.title).toBe('Workast');
       expect(manifest.description).toBe(description);
       expect(manifest.version).toBe('1.4.1');
