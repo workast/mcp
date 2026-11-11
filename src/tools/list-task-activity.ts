@@ -35,7 +35,7 @@ export function registerListTaskActivity(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_task_activity', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_task_activity', async (workast) => {
       const query: TaskActivitySearchQuery = {
         limit: args.limit,
         skip: args.skip,

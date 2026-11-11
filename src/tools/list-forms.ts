@@ -36,7 +36,7 @@ export function registerListForms(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_forms', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_forms', async (workast) => {
       const query = omitEmpty({
         limit: args.limit,
         page: args.page,

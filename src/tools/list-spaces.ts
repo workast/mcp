@@ -41,7 +41,7 @@ export function registerListSpaces(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_spaces', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_spaces', async (workast) => {
       const query = omitEmpty({
         limit: args.limit,
         skip: args.skip,

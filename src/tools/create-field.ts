@@ -31,7 +31,7 @@ export function registerCreateField(server: McpServer): void {
         idempotentHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_field', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_create_field', async (workast) => {
       if (args.type === 'options' && (args.options == null || args.options.length === 0)) {
         throw new ToolError([{
           param: 'options',

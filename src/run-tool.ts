@@ -1,4 +1,5 @@
 import { AccountError, ApiError, TimeoutError, type Workast } from '@workast/sdk';
+import type { ServerContext } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { getClient } from './analytics';
 import { logger } from './logger';
@@ -117,11 +118,12 @@ export function toolErrorFrom(
 }
 
 export async function runWorkast(
-  token: string | undefined,
+  ctx: ServerContext,
   tool: string,
   fn: (workast: Workast) => Promise<unknown>,
 ): Promise<ToolContent> {
   const started = Date.now();
+  const token = ctx.http?.authInfo?.token;
 
   if (!token) {
     const failed = new ToolError([{
@@ -141,7 +143,17 @@ export async function runWorkast(
     };
   }
 
-  const workast = createWorkast(token);
+  const headers: Record<string, string> = {};
+  if (ctx.http?.req) {
+    for (const [name, value] of ctx.http.req.headers) {
+      const key = name.toLowerCase();
+      const trimmed = value.trim();
+      if (key.startsWith('w-') && trimmed !== '') {
+        headers[key] = trimmed;
+      }
+    }
+  }
+  const workast = createWorkast(token, headers);
   let userId: string | undefined;
   try {
     const tokenInfo = await workast.tokens.retrieve();

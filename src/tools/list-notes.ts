@@ -37,7 +37,7 @@ export function registerListNotes(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_notes', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_notes', async (workast) => {
       const query = omitEmpty({
         lists: [args.spaceId],
         limit: args.limit,

@@ -45,7 +45,7 @@ export function registerUpdateField(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_field', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_update_field', async (workast) => {
       if (args.name === undefined && args.description === undefined && args.options === undefined) {
         throw new ToolError([{
           param: 'fieldId',

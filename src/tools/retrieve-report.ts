@@ -25,7 +25,7 @@ export function registerRetrieveReport(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_report', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_retrieve_report', async (workast) => {
       const report: SearchDetail = await workast.searches.retrieve(
         args.reportId,
         { getTasks: args.getTasks },

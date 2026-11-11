@@ -22,7 +22,7 @@ export function registerRetrieveNote(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_note', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_retrieve_note', async (workast) => {
       const note = await workast.notes.retrieve(args.noteId);
       return projectNoteDetail(note);
     }),

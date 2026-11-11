@@ -148,7 +148,7 @@ export function registerSearchTasks(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_search_tasks', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_search_tasks', async (workast) => {
       const filters = omitEmpty(args);
       const skip = filters.skip ?? 0;
       const body = {

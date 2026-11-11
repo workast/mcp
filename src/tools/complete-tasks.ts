@@ -22,7 +22,7 @@ export function registerCompleteTasks(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_complete_tasks', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_complete_tasks', async (workast) => {
       const succeeded = [];
       for (const [i, taskId] of args.taskIds.entries()) {
         try {

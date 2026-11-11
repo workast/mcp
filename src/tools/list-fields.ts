@@ -23,7 +23,7 @@ export function registerListFields(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_fields', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_fields', async (workast) => {
       const fields: CustomField[] = args.spaceId
         ? await workast.fields.list({ listId: args.spaceId })
         : await workast.fields.list();

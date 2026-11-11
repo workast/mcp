@@ -10,7 +10,7 @@ description: >-
 
 # Add an MCP tool
 
-Copy a nearby tool (for example `src/tools/create-tasks.ts` and `test/tools/create-tasks.test.ts`). One SDK method → one tool file + one test file. Explicit import in `src/create-handler.ts` — no auto-registry. Auth stays in `src/auth/verify-api-key.ts`; tools only read `ctx.http?.authInfo?.token`. Types and examples come from `@workast/sdk` / `@workast/sdk/mock`. Do not add OAuth, retries, or extra abstraction layers.
+Copy a nearby tool (for example `src/tools/create-tasks.ts` and `test/tools/create-tasks.test.ts`). One SDK method → one tool file + one test file. Explicit import in `src/create-handler.ts` — no auto-registry. Auth stays in `src/auth/verify-api-key.ts`. Tools pass `ctx` to `runWorkast` and do not read `ctx.http` themselves. Types and examples come from `@workast/sdk` / `@workast/sdk/mock`. Do not add OAuth, retries, or extra abstraction layers.
 
 Canonical example: `workast_create_tasks` → `workast.tasks.create(spaceId, body)` via `createWorkast` in `src/workast.ts`. Tool args use UI names (`spaceId`, `reportId`); SDK paths stay `/list`, `/search`. Tool names always use the `workast_` prefix.
 
@@ -24,7 +24,7 @@ Canonical example: `workast_create_tasks` → `workast.tasks.create(spaceId, bod
 | Route | `app/mcp/route.ts` — already mounts `createHandler()`; do not register tools here |
 | Client | `src/workast.ts` — `createWorkast(apiKey)` |
 | Auth | `src/auth/verify-api-key.ts` — do not change for a new tool |
-| Run | `src/run-tool.ts` — `runWorkast(token, tool, fn)` converts `ToolError` to MCP `isError` |
+| Run | `src/run-tool.ts` — `runWorkast(ctx, tool, fn)` reads the bearer token and incoming `w-` headers from `ctx`, then converts `ToolError` to MCP `isError` |
 | Helpers | `test/helpers.ts` — `setupWorkastMock`, `callTool`, `expectToolData`, `mcpRequest` |
 
 Tool name is the MCP name with a `workast_` prefix: `workast_list_spaces`, `workast_create_tasks`, `workast_retrieve_report`. File slug uses hyphens: `list-spaces.ts`. Register fn is `register` + PascalCase tool: `registerListSpaces`. Every new tool must set `title` and annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` as appropriate, and `openWorldHint: false`. Every new tool must set `outputSchema` (an envelope object, or the matching card Zod schema from `src/project.ts` for a single entity). `runWorkast` adds `structuredContent` on success — do not set it in the tool handler.
@@ -63,7 +63,7 @@ Add `src/tools/<tool-name>.ts`. Pattern from `create-tasks`:
 - `server.registerTool('workast_create_tasks', { title, description, inputSchema, outputSchema, annotations }, handler)`.
 - Zod `inputSchema`: UI path ids first (`spaceId`, `taskId`, …), then swagger/SDK body fields as optional/required Zod fields — do not invent fields. Cast the body slice to the SDK type (`TaskCreate`, …) from `@workast/sdk`.
 - Zod `outputSchema`: envelope object (`{ tasks: z.array(searchTaskCardSchema) }`, `{ succeeded: z.array(z.string()) }`, pagination keys) or the matching card schema from `../project` for a single entity. Do not use `entitySchema` or raw SDK objects as the agent-facing slot.
-- Handler: `runWorkast(ctx.http?.authInfo?.token, 'workast_create_tasks', async (workast) => { … })`. After the SDK call, project through `src/project.ts` (`projectSearchTask`, `projectRetrieveTask`, `projectSpace`, …) and return the card (or an envelope of cards). Collection/batch success is an object (`{ tasks }`, `{ subtasks }`, `{ fields }`, `{ participants }`, `{ succeeded: ids }` for void batches). True void (one SDK call with no value, plus ping) is `{ ok: true }`. Partial write extra uses the same key as success. Throw `new ToolError` / `toolErrorFrom` from inside the callback; do not return MCP error objects. `param` is an optional tool input path (`tasks[1]`, `spaceId`). Unscoped API, timeout, and account errors omit it. `runWorkast` converts `ToolError` to `isError: true` and tracks `MCP - Tool Used`. Unknowns rethrow.
+- Handler: `runWorkast(ctx, 'workast_create_tasks', async (workast) => { … })`. After the SDK call, project through `src/project.ts` (`projectSearchTask`, `projectRetrieveTask`, `projectSpace`, …) and return the card (or an envelope of cards). Collection/batch success is an object (`{ tasks }`, `{ subtasks }`, `{ fields }`, `{ participants }`, `{ succeeded: ids }` for void batches). True void (one SDK call with no value, plus ping) is `{ ok: true }`. Partial write extra uses the same key as success. Throw `new ToolError` / `toolErrorFrom` from inside the callback; do not return MCP error objects. `param` is an optional tool input path (`tasks[1]`, `spaceId`). Unscoped API, timeout, and account errors omit it. `runWorkast` converts `ToolError` to `isError: true` and tracks `MCP - Tool Used`. Unknowns rethrow.
 
 ```ts
 import type { TaskCreate } from '@workast/sdk';
@@ -89,7 +89,7 @@ Do not create a tool registry, barrel export of all tools, or dynamic loader.
 
 ## 5. Auth stays put
 
-`verifyApiKey` + `withMcpAuth(..., { required: true })` already wrap the handler. New tools must not parse `Authorization` themselves. Only use `ctx.http?.authInfo?.token` as the Workast API key.
+`verifyApiKey` + `withMcpAuth(..., { required: true })` already wrap the handler. New tools must not parse `Authorization` themselves. Pass `ctx` to `runWorkast`; it uses `ctx.http.authInfo.token` as the Workast API key and copies incoming `w-` headers onto that client.
 
 ## 6. Verify
 

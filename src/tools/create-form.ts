@@ -60,7 +60,7 @@ export function registerCreateForm(server: McpServer): void {
         idempotentHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_form', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_create_form', async (workast) => {
       const body = omitEmpty({
         title: args.title,
         description: args.description,

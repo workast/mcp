@@ -71,7 +71,7 @@ export function registerUpdateSpace(server: McpServer): void {
         idempotentHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_space', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_update_space', async (workast) => {
       const hasChanges = args.name !== undefined
         || args.readme !== undefined
         || args.defaultList !== undefined

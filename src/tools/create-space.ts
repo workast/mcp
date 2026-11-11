@@ -29,7 +29,7 @@ export function registerCreateSpace(server: McpServer): void {
         idempotentHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_space', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_create_space', async (workast) => {
       const body = omitEmpty({
         name: args.name,
         participants: args.participants,

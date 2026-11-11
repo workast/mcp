@@ -64,7 +64,7 @@ export function registerUpdateTasks(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_tasks', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_update_tasks', async (workast) => {
       let {
         taskIds, summary, spaceId, listId, addAssignee, removeAssignee, addTags, removeTags,
         repeat, startDate, dueDate, ...taskFields
