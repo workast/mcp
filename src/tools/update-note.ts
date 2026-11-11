@@ -30,7 +30,7 @@ export function registerUpdateNote(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_note', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_update_note', async (workast) => {
       const body: NotePatch = {};
       if (args.title !== undefined) body.title = args.title;
       if (args.summary !== undefined) body.summary = args.summary;

@@ -33,7 +33,7 @@ export function registerRetrieveTasks(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_tasks', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_retrieve_tasks', async (workast) => {
       const taskIds = args.taskIds ?? [];
       const shortIds = args.shortIds ?? [];
       if (taskIds.length === 0 && shortIds.length === 0) {

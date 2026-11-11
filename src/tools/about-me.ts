@@ -20,7 +20,7 @@ export function registerAboutMe(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (_args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_about_me', async (workast) => {
+    async (_args, ctx) => runWorkast(ctx, 'workast_about_me', async (workast) => {
       return projectMe(await workast.users.me());
     }),
   );

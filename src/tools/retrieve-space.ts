@@ -22,7 +22,7 @@ export function registerRetrieveSpace(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_space', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_retrieve_space', async (workast) => {
       const space = await workast.lists.retrieve(args.spaceId);
       return projectSpaceDetail(space);
     }),

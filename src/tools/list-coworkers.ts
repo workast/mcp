@@ -39,7 +39,7 @@ export function registerListCoworkers(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_coworkers', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_coworkers', async (workast) => {
       const query = omitEmpty({
         limit: args.limit,
         name: args.name,

@@ -50,7 +50,7 @@ export function registerCreateSubtasks(server: McpServer): void {
         idempotentHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_subtasks', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_create_subtasks', async (workast) => {
       const dates = args.subtasks.flatMap((task) => [task.startDate, task.dueDate]);
       const timeZone = dates.some(needsTimeZone)
         ? (await workast.users.me()).timezone || 'UTC'

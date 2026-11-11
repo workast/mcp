@@ -23,7 +23,7 @@ export function registerUpdateSpaceReadme(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_update_space_readme', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_update_space_readme', async (workast) => {
       await workast.lists.update(args.spaceId, { readme: args.readme });
       return { ok: true as const };
     }),

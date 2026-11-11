@@ -22,7 +22,7 @@ export function registerListSpaceParticipants(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_space_participants', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_space_participants', async (workast) => {
       const participants = (await workast.lists.participants.list(args.spaceId)).map(projectUser);
       return { participants };
     }),

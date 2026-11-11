@@ -35,7 +35,7 @@ export function registerListReports(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_list_reports', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_list_reports', async (workast) => {
       const query: SearchFindQuery = {
         limit: args.limit,
         skip: args.skip,

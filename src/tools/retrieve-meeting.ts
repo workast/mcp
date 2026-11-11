@@ -25,7 +25,7 @@ export function registerRetrieveMeeting(server: McpServer): void {
         destructiveHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_retrieve_meeting', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_retrieve_meeting', async (workast) => {
       const meeting: MeetingResource = await workast.meetings.retrieve(args.meetingId);
       if (!args.includeTranscript) {
         return projectMeeting(meeting);

@@ -25,7 +25,7 @@ export function registerCreateComment(server: McpServer): void {
         idempotentHint: false,
       },
     },
-    async (args, ctx) => runWorkast(ctx.http?.authInfo?.token, 'workast_create_comment', async (workast) => {
+    async (args, ctx) => runWorkast(ctx, 'workast_create_comment', async (workast) => {
       const activity: CommentActivity = await workast.tasks.activities.create(args.taskId, {
         type: 'comment',
         value: args.comment,

@@ -46,12 +46,19 @@ export type ToolCallMessage = {
   error?: unknown;
 };
 
+type McpRequestOptions = {
+  apiKey?: string | null;
+  id?: number;
+  headers?: Record<string, string>;
+};
+
 export async function callTool(
   POST: (request: Request) => Promise<Response>,
   name: string,
   args: Record<string, unknown> = {},
+  options: McpRequestOptions = {},
 ): Promise<{ status: number; message: ToolCallMessage }> {
-  const response = await POST(mcpRequest(name, args));
+  const response = await POST(mcpRequest(name, args, options));
   return {
     status: response.status,
     message: sseData(await response.text()) as ToolCallMessage,
@@ -160,11 +167,12 @@ export type JsonRpcMessage = {
 export function jsonRpcRequest(
   method: string,
   params: Record<string, unknown> = {},
-  options: { apiKey?: string | null; id?: number } = {},
+  options: McpRequestOptions = {},
 ): Request {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json, text/event-stream',
+    ...options.headers,
   };
   if (options.apiKey !== null) {
     headers.Authorization = `Bearer ${options.apiKey ?? API_KEY}`;
@@ -197,7 +205,7 @@ export async function callJsonRpc(
 export function mcpRequest(
   name: string,
   args: Record<string, unknown>,
-  options: { apiKey?: string | null; id?: number } = {},
+  options: McpRequestOptions = {},
 ): Request {
   return jsonRpcRequest('tools/call', { name, arguments: args }, options);
 }
